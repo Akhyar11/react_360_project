@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize";
 import mysql from "mysql2/promise";
+import mysql2 from "mysql2";
 
 const DB_HOST = process.env.DB_HOST || "127.0.0.1";
 const DB_USER = process.env.DB_USER || "root";
@@ -26,6 +27,7 @@ export const ensureDatabaseExists = async () => {
 const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   host: DB_HOST,
   dialect: "mysql",
+  dialectModule: mysql2,
   logging: false, // Set to console.log to see SQL queries in terminal
   pool: {
     max: 5,

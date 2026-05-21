@@ -35,3 +35,4 @@ scratch/
 # Product Release Artifacts
 release/
 obfuscated-server/
+dist-server/

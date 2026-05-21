@@ -40,7 +40,7 @@ app.get("/api", (req, res) => {
 });
 
 // Catch-all SPA router fallback (MUST be placed below API routes)
-app.get("*", (req, res) => {
+app.get("/*splat", (req, res) => {
   if (!req.url.startsWith("/api") && !req.url.startsWith("/uploads")) {
     res.sendFile(path.resolve("dist/index.html"));
   }

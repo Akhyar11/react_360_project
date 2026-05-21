@@ -2,9 +2,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_FILE_PATH = path.join(__dirname, "..", "tourData.json");
+const _filename = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
+const _dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(_filename);
+const DATA_FILE_PATH = path.join(_dirname, "..", "tourData.json");
 
 export const readTourData = () => {
   try {
