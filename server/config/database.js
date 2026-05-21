@@ -4,7 +4,7 @@ import mysql2 from "mysql2";
 
 const DB_HOST = process.env.DB_HOST || "127.0.0.1";
 const DB_USER = process.env.DB_USER || "root";
-const DB_PASSWORD = process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : "danreas1";
+const DB_PASSWORD = process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : "";
 const DB_NAME = process.env.DB_NAME || "react_360_tour";
 
 // Helper to auto-create the database if it doesn't exist
