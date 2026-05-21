@@ -10,7 +10,10 @@ export type TourNode = {
   mapPosition?: {
     x: number;
     y: number;
+    shape?: 'circle' | 'square' | 'triangle' | 'diamond';
+    color?: string;
   };
+  mapId?: string;
   facilities?: string[];
   navigationHotspots: NavigationHotspot[];
   infoHotspots: InfoHotspot[];

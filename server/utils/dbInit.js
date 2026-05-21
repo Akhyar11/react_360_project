@@ -40,6 +40,29 @@ export const initializeDatabase = async () => {
     const campusCount = await CampusInfo.count();
     const nodeCount = await TourNode.count();
 
+    // Ensure existing campus info has default maps if not populated
+    if (campusCount > 0) {
+      const mainInfo = await CampusInfo.findOne();
+      if (!mainInfo.maps || mainInfo.maps.length === 0) {
+        mainInfo.maps = [
+          {
+            id: "kampus-utama",
+            name: "Kampus Utama (Pusat)",
+            imageUrl: "",
+            description: "Denah area Kampus Utama UAN"
+          },
+          {
+            id: "kampus-cabang",
+            name: "Kampus Cabang (Vokasi)",
+            imageUrl: "",
+            description: "Denah area Kampus Cabang Vokasi UAN"
+          }
+        ];
+        await mainInfo.save();
+        console.log("ℹ️ Kolom 'maps' pada profil kampus telah diinisialisasi secara otomatis.");
+      }
+    }
+
     if (campusCount === 0 && nodeCount === 0) {
       console.log("🌱 Database MySQL kosong. Melakukan seeding data awal dari tourData.json...");
       

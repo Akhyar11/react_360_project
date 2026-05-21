@@ -16,12 +16,13 @@ export function TourPage() {
 
   // Dynamic state for locations
   const [nodes, setNodes] = useState(fallbackNodes);
+  const [maps, setMaps] = useState<any[]>([]);
 
   // Find active node based on URL param or fallback to first node
   const defaultNode = nodes[0] || fallbackNodes[0];
   const activeNode = nodes.find((node) => node.id === locationId) || defaultNode;
 
-  // Fetch locations dynamically on mount
+  // Fetch locations and campus maps dynamically on mount
   useEffect(() => {
     fetch("http://localhost:5000/api/nodes")
       .then((res) => {
@@ -30,6 +31,13 @@ export function TourPage() {
       })
       .then((data) => setNodes(data))
       .catch((err) => console.log("Backend offline, menggunakan data statis lokal: ", err));
+
+    fetch("http://localhost:5000/api/campus-info")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.maps) setMaps(data.maps);
+      })
+      .catch((err) => console.log("Gagal mengambil data maps:", err));
   }, []);
 
   // State Management
@@ -207,6 +215,7 @@ export function TourPage() {
               nodes={nodes}
               activeNodeId={activeNode.id}
               onSelect={handleNavigate}
+              maps={maps}
             />
           </div>
         )}

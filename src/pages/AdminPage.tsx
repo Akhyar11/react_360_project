@@ -16,6 +16,7 @@ import {
   Layers,
   Sparkles,
   Upload,
+  Map,
   X
 } from "lucide-react";
 import { campusInfo as fallbackInfo, tourNodes as fallbackNodes } from "../data/tourNodes";
@@ -24,7 +25,7 @@ import type { TourNode } from "../types/tour";
 export function AdminPage() {
   const [nodes, setNodes] = useState<TourNode[]>(fallbackNodes);
   const [campusInfo, setCampusInfo] = useState(fallbackInfo);
-  const [activeTab, setActiveTab] = useState<"locations" | "campus">("locations");
+  const [activeTab, setActiveTab] = useState<"locations" | "campus" | "maps">("locations");
   const [adminName, setAdminName] = useState("Admin");
   const navigate = useNavigate();
   
@@ -74,6 +75,20 @@ export function AdminPage() {
       const resInfo = await fetch("http://localhost:5000/api/campus-info");
       if (resInfo.ok) {
         const dataInfo = await resInfo.json();
+        if (dataInfo.maps && typeof dataInfo.maps === "string") {
+          try {
+            dataInfo.maps = JSON.parse(dataInfo.maps);
+          } catch (e) {
+            console.error("Gagal mengurai maps:", e);
+          }
+        }
+        if (dataInfo.stats && typeof dataInfo.stats === "string") {
+          try {
+            dataInfo.stats = JSON.parse(dataInfo.stats);
+          } catch (e) {
+            console.error("Gagal mengurai stats:", e);
+          }
+        }
         setCampusInfo(dataInfo);
       }
     } catch (error) {
@@ -102,6 +117,7 @@ export function AdminPage() {
       defaultYaw: 0,
       defaultPitch: 0,
       mapPosition: { x: 50, y: 50 },
+      mapId: "kampus-utama",
       facilities: [],
       navigationHotspots: [],
       infoHotspots: []
@@ -277,6 +293,105 @@ export function AdminPage() {
     }
   };
 
+  // --- CAMPUS MAP ACTIONS ---
+
+  const handleMapBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>, mapId: string) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/upload", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal mengunggah berkas gambar.");
+      }
+
+      const updatedMaps = (campusInfo.maps || []).map((m: any) => {
+        if (m.id === mapId) {
+          return { ...m, imageUrl: data.url };
+        }
+        return m;
+      });
+
+      setCampusInfo({
+        ...campusInfo,
+        maps: updatedMaps
+      });
+
+      showToast("success", "Gambar denah berhasil diunggah secara fisik!");
+    } catch (err: any) {
+      console.error(err);
+      showToast("error", err.message || "Gagal menghubungi server untuk mengunggah gambar.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddMap = () => {
+    const newMapId = `kampus-${Date.now()}`;
+    const newMapName = `Kampus Baru (Zona ${(campusInfo.maps?.length || 0) + 1})`;
+    const newMaps = [
+      ...(campusInfo.maps || []),
+      {
+        id: newMapId,
+        name: newMapName,
+        imageUrl: "",
+        description: "Denah area baru"
+      }
+    ];
+    setCampusInfo({
+      ...campusInfo,
+      maps: newMaps
+    });
+  };
+
+  const handleRemoveMap = (mapId: string) => {
+    const hasReferencingNodes = nodes.some(node => (node.mapId || "kampus-utama") === mapId);
+    if (hasReferencingNodes) {
+      showToast("error", "Denah ini tidak dapat dihapus karena masih ada titik lokasi yang terhubung dengannya!");
+      return;
+    }
+
+    if (mapId === "kampus-utama" && (campusInfo.maps || []).length === 1) {
+      showToast("error", "Harus menyisakan minimal 1 denah utama!");
+      return;
+    }
+
+    const confirmDelete = window.confirm("Apakah Anda yakin ingin menghapus denah ini? Pilihan ini tidak dapat dibatalkan.");
+    if (!confirmDelete) return;
+
+    const newMaps = (campusInfo.maps || []).filter((m: any) => m.id !== mapId);
+    setCampusInfo({
+      ...campusInfo,
+      maps: newMaps
+    });
+  };
+
+  const handleUpdateMapField = (mapId: string, field: string, value: any) => {
+    const newMaps = (campusInfo.maps || []).map((m: any) => {
+      if (m.id === mapId) {
+        return { ...m, [field]: value };
+      }
+      return m;
+    });
+    setCampusInfo({
+      ...campusInfo,
+      maps: newMaps
+    });
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-teal-500 selection:text-slate-900">
       {/* Toast Alert */}
@@ -438,6 +553,15 @@ export function AdminPage() {
             {activeTab === "campus" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-400 rounded-full" />}
             Profil Kampus & Statistik
           </button>
+          <button
+            onClick={() => setActiveTab("maps")}
+            className={`pb-4 px-2 text-base font-bold transition-all relative ${
+              activeTab === "maps" ? "text-teal-400" : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            {activeTab === "maps" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-400 rounded-full" />}
+            Kelola Denah Peta (Background)
+          </button>
         </div>
 
         {/* --- TAB CONTENT: LOCATIONS --- */}
@@ -594,6 +718,123 @@ export function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* --- TAB CONTENT: MAPS MANAGEMENT --- */}
+        {activeTab === "maps" && (
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Map className="w-5 h-5 text-teal-400" />
+                  Manajemen Denah & Background Peta
+                </h2>
+                <p className="text-xs text-slate-500 font-light mt-1">
+                  Unggah foto dari drone atau peta skematik kampus untuk dijadikan latar belakang MiniMap. Kelompokkan titik lokasi berdasarkan areanya.
+                </p>
+              </div>
+              <button
+                onClick={handleAddMap}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-400 to-blue-500 text-slate-950 font-bold hover:scale-105 active:scale-95 transition-all shadow-lg text-xs"
+              >
+                <Plus className="w-4 h-4" />
+                Tambah Denah Baru
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {(campusInfo.maps || []).map((map: any) => {
+                const mapNodes = nodes.filter(n => (n.mapId || "kampus-utama") === map.id);
+
+                return (
+                  <div key={map.id} className="p-6 rounded-2xl border border-slate-900 bg-slate-950/80 flex flex-col justify-between gap-5 relative overflow-hidden group shadow-xl">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-2xl pointer-events-none" />
+                    
+                    <div className="space-y-4">
+                      {/* Title & Delete Icon */}
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-mono text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20 uppercase tracking-widest">
+                            ID: {map.id}
+                          </span>
+                          <input
+                            type="text"
+                            value={map.name}
+                            onChange={(e) => handleUpdateMapField(map.id, "name", e.target.value)}
+                            className="bg-transparent text-lg font-bold text-white focus:outline-none focus:border-b border-teal-400 pb-0.5 w-full mt-1.5"
+                            placeholder="Nama Denah Kampus"
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleRemoveMap(map.id)}
+                          className="p-2 rounded-xl bg-slate-900 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                          title="Hapus Denah"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Map Image Upload & Preview */}
+                      <div className="relative h-40 rounded-xl border border-slate-800 bg-slate-900 overflow-hidden flex items-center justify-center bg-cover bg-center shadow-inner group-hover:border-slate-700 transition-all">
+                        {map.imageUrl ? (
+                          <>
+                            <img src={map.imageUrl} alt={map.name} className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" />
+                            <div className="absolute inset-0 bg-slate-950/40" />
+                          </>
+                        ) : (
+                          <div className="text-center p-4">
+                            <Map className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                            <p className="text-[10px] text-slate-500">Belum ada foto latar belakang peta.</p>
+                            <p className="text-[9px] text-teal-500/70 font-light mt-0.5">Menggunakan visual grid default.</p>
+                          </div>
+                        )}
+
+                        <label className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-teal-400 font-bold tracking-wider uppercase hover:bg-slate-900 cursor-pointer shadow-lg z-10">
+                          Unggah Background
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleMapBackgroundUpload(e, map.id)}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Description */}
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500">Deskripsi / Detail Denah</label>
+                        <textarea
+                          rows={2}
+                          value={map.description || ""}
+                          onChange={(e) => handleUpdateMapField(map.id, "description", e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-900 bg-slate-900/30 text-xs text-slate-300 focus:outline-none focus:border-teal-500 transition-colors resize-none"
+                          placeholder="Deskripsi singkat denah kampus ini..."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3.5 border-t border-slate-900 flex justify-between items-center text-[10px] text-slate-500">
+                      <span>Titik terhubung: <b className="text-slate-300">{mapNodes.length} Lokasi</b></span>
+                      <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-slate-400">
+                        {map.imageUrl ? "Custom Photo" : "Neon Grid Mode"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Save All Maps State Button */}
+            <div className="pt-6 border-t border-slate-900 flex justify-end">
+              <button
+                onClick={handleSaveCampusInfo}
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-teal-400 to-blue-500 text-slate-950 font-bold hover:scale-105 active:scale-95 transition-all shadow-lg"
+              >
+                <Save className="w-4 h-4" />
+                Simpan Konfigurasi Denah
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* --- FORM MODAL: ADD / EDIT LOCATION --- */}
@@ -661,6 +902,19 @@ export function AdminPage() {
                       <option value="Perpustakaan">Perpustakaan</option>
                       <option value="Laboratorium">Laboratorium</option>
                       <option value="Fasilitas Umum">Fasilitas Umum</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Denah Peta (Lokasi Kampus / Zona)</label>
+                    <select
+                      value={editingNode.mapId || "kampus-utama"}
+                      onChange={(e) => setEditingNode({ ...editingNode, mapId: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-900 bg-slate-900/40 text-sm text-slate-200 focus:outline-none focus:border-teal-500"
+                    >
+                      {(campusInfo.maps || []).map((m: any) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -754,10 +1008,212 @@ export function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Map position coordinates */}
+                  {/* Interactive Visual Map Editor */}
+                  <div className="space-y-3">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 flex justify-between items-center">
+                      <span>Visual Map Placement (Klik untuk Mengubah)</span>
+                      <span className="text-[9px] text-teal-400 font-bold lowercase">Klik/tunjuk pada grid untuk memposisikan titik</span>
+                    </label>
+                    
+                    <div 
+                      className="relative h-48 rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden cursor-crosshair shadow-inner select-none flex items-center justify-center bg-cover bg-center"
+                      style={{ 
+                        backgroundImage: (() => {
+                          const currentMapId = editingNode.mapId || "kampus-utama";
+                          const selectedMap = (campusInfo.maps || []).find((m: any) => m.id === currentMapId) || (campusInfo.maps || [])[0];
+                          return selectedMap?.imageUrl ? `url(${selectedMap.imageUrl})` : 'none';
+                        })()
+                      }}
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+                        const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+                        const clampedX = Math.max(0, Math.min(100, x));
+                        const clampedY = Math.max(0, Math.min(100, y));
+                        
+                        setEditingNode({
+                          ...editingNode,
+                          mapPosition: {
+                            ...editingNode.mapPosition,
+                            x: clampedX,
+                            y: clampedY,
+                            shape: editingNode.mapPosition?.shape || 'circle',
+                            color: editingNode.mapPosition?.color || '#14b8a6'
+                          }
+                        });
+                      }}
+                    >
+                      {/* Dark overlay for contrast */}
+                      {(() => {
+                        const currentMapId = editingNode.mapId || "kampus-utama";
+                        const selectedMap = (campusInfo.maps || []).find((m: any) => m.id === currentMapId) || (campusInfo.maps || [])[0];
+                        return selectedMap?.imageUrl ? <div className="absolute inset-0 bg-slate-950/45 pointer-events-none z-0" /> : null;
+                      })()}
+
+                      {/* Grid Overlay Pattern */}
+                      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40 z-10">
+                        <defs>
+                          <pattern id="adminMapGrid" width="10%" height="10%" patternUnits="userSpaceOnUse">
+                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(20, 184, 166, 0.15)" strokeWidth="0.5" />
+                          </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#adminMapGrid)" />
+                        
+                        {/* Dynamic lines between other nodes in the same zone */}
+                        {nodes.map(nodeA => {
+                          const posA = nodeA.mapPosition || { x: 50, y: 50 };
+                          const colorA = nodeA.mapPosition?.color || '#14b8a6';
+                          const nodeAMapId = nodeA.mapId || "kampus-utama";
+                          const currentMapId = editingNode.mapId || "kampus-utama";
+                          
+                          if (nodeAMapId !== currentMapId) return null;
+                          
+                          return nodeA.navigationHotspots?.map((hs, index) => {
+                            const nodeB = nodes.find(n => n.id === hs.targetNodeId);
+                            if (nodeB && (nodeB.mapId || "kampus-utama") === currentMapId && nodeA.id !== editingNode.id && nodeB.id !== editingNode.id) {
+                              const posB = nodeB.mapPosition || { x: 50, y: 50 };
+                              return (
+                                <line
+                                  key={`${nodeA.id}-${nodeB.id}-${index}`}
+                                  x1={`${posA.x}%`}
+                                  y1={`${posA.y}%`}
+                                  x2={`${posB.x}%`}
+                                  y2={`${posB.y}%`}
+                                  stroke="rgba(71, 85, 105, 0.4)"
+                                  strokeWidth="1"
+                                  strokeDasharray="2 2"
+                                />
+                              );
+                            }
+                            return null;
+                          });
+                        })}
+                      </svg>
+
+                      {/* Render Other Nodes in the same zone as Static Hints */}
+                      {nodes
+                        .filter((n) => n.id !== editingNode.id && (n.mapId || "kampus-utama") === (editingNode.mapId || "kampus-utama"))
+                        .map((node) => {
+                          const pos = node.mapPosition || { x: 50, y: 50 };
+                          const shape = node.mapPosition?.shape || 'circle';
+                          const color = node.mapPosition?.color || '#475569';
+                          
+                          return (
+                            <div
+                              key={node.id}
+                              className="absolute -translate-x-1/2 -translate-y-1/2 opacity-35 pointer-events-none z-10"
+                              style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                            >
+                              {shape === 'square' && <div className="w-2.5 h-2.5 rounded-sm border border-slate-950" style={{ backgroundColor: color }} />}
+                              {shape === 'triangle' && <div className="w-2.5 h-2.5 border border-slate-950" style={{ backgroundColor: color, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />}
+                              {shape === 'diamond' && <div className="w-2 h-2 rotate-45 border border-slate-950" style={{ backgroundColor: color }} />}
+                              {shape === 'circle' && <div className="w-2.5 h-2.5 rounded-full border border-slate-950" style={{ backgroundColor: color }} />}
+                            </div>
+                          );
+                        })}
+
+                      {/* Render Current Editing Node (Glowing Marker) */}
+                      {(() => {
+                        const pos = editingNode.mapPosition || { x: 50, y: 50 };
+                        const shape = editingNode.mapPosition?.shape || 'circle';
+                        const color = editingNode.mapPosition?.color || '#14b8a6';
+                        
+                        return (
+                          <div
+                            className="absolute -translate-x-1/2 -translate-y-1/2 z-20 flex h-7 w-7 items-center justify-center pointer-events-none"
+                            style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                          >
+                            <span 
+                              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
+                              style={{ backgroundColor: color }}
+                            />
+                            <div className="relative flex items-center justify-center scale-110 shadow-lg shadow-black/80">
+                              {shape === 'square' && <div className="w-3.5 h-3.5 rounded-sm border border-white" style={{ backgroundColor: color }} />}
+                              {shape === 'triangle' && <div className="w-3.5 h-3.5 border border-white" style={{ backgroundColor: color, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />}
+                              {shape === 'diamond' && <div className="w-3 h-3 rotate-45 border border-white" style={{ backgroundColor: color }} />}
+                              {shape === 'circle' && <div className="w-3.5 h-3.5 rounded-full border border-white" style={{ backgroundColor: color }} />}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      
+                      {/* Visual Marker Label */}
+                      <div className="absolute top-2 right-3 text-[8px] bg-slate-900/80 px-2 py-0.5 border border-slate-800 rounded font-mono text-teal-400 select-none uppercase tracking-wider z-20">
+                        X: {editingNode.mapPosition?.x ?? 50}% | Y: {editingNode.mapPosition?.y ?? 50}%
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Shape & Color settings */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Posisi Peta X (%)</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bentuk Marker Denah</label>
+                      <select
+                        value={editingNode.mapPosition?.shape || "circle"}
+                        onChange={(e) => setEditingNode({
+                          ...editingNode,
+                          mapPosition: {
+                            ...editingNode.mapPosition,
+                            x: editingNode.mapPosition?.x ?? 50,
+                            y: editingNode.mapPosition?.y ?? 50,
+                            shape: e.target.value as any
+                          }
+                        })}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-900 bg-slate-900/40 text-sm text-slate-200 focus:outline-none focus:border-teal-500"
+                      >
+                        <option value="circle">● Lingkaran (Circle)</option>
+                        <option value="square">■ Kotak (Square)</option>
+                        <option value="triangle">▲ Segitiga (Triangle)</option>
+                        <option value="diamond">◆ Wajik (Diamond)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Warna Marker Denah</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={editingNode.mapPosition?.color || "#14b8a6"}
+                          onChange={(e) => setEditingNode({
+                            ...editingNode,
+                            mapPosition: {
+                              ...editingNode.mapPosition,
+                              x: editingNode.mapPosition?.x ?? 50,
+                              y: editingNode.mapPosition?.y ?? 50,
+                              color: e.target.value
+                            }
+                          })}
+                          className="w-12 h-[38px] p-1.5 rounded-xl border border-slate-900 bg-slate-900/40 cursor-pointer"
+                        />
+                        <select
+                          value={editingNode.mapPosition?.color || "#14b8a6"}
+                          onChange={(e) => setEditingNode({
+                            ...editingNode,
+                            mapPosition: {
+                              ...editingNode.mapPosition,
+                              x: editingNode.mapPosition?.x ?? 50,
+                              y: editingNode.mapPosition?.y ?? 50,
+                              color: e.target.value
+                            }
+                          })}
+                          className="flex-1 px-4 py-2.5 rounded-xl border border-slate-900 bg-slate-900/40 text-sm text-slate-200 focus:outline-none focus:border-teal-500"
+                        >
+                          <option value="#14b8a6">Teal (Cyber)</option>
+                          <option value="#ec4899">Cyber Pink</option>
+                          <option value="#3b82f6">Electric Blue</option>
+                          <option value="#8b5cf6">Bright Violet</option>
+                          <option value="#f97316">Sun Orange</option>
+                          <option value="#eab308">Neon Yellow</option>
+                          <option value="#ef4444">Retro Red</option>
+                          <option value="#22c55e">Acid Green</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fine-Tuning Coordinates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Fine-Tuning Posisi X (%)</label>
                       <input
                         type="number"
                         min="0"
@@ -765,13 +1221,17 @@ export function AdminPage() {
                         value={editingNode.mapPosition?.x ?? 50}
                         onChange={(e) => setEditingNode({
                           ...editingNode,
-                          mapPosition: { x: parseInt(e.target.value), y: editingNode.mapPosition?.y ?? 50 }
+                          mapPosition: {
+                            ...editingNode.mapPosition,
+                            x: parseInt(e.target.value) || 0,
+                            y: editingNode.mapPosition?.y ?? 50
+                          }
                         })}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-900 bg-slate-900/40 text-sm text-slate-200 focus:outline-none focus:border-teal-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Posisi Peta Y (%)</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Fine-Tuning Posisi Y (%)</label>
                       <input
                         type="number"
                         min="0"
@@ -779,7 +1239,11 @@ export function AdminPage() {
                         value={editingNode.mapPosition?.y ?? 50}
                         onChange={(e) => setEditingNode({
                           ...editingNode,
-                          mapPosition: { x: editingNode.mapPosition?.x ?? 50, y: parseInt(e.target.value) }
+                          mapPosition: {
+                            ...editingNode.mapPosition,
+                            x: editingNode.mapPosition?.x ?? 50,
+                            y: parseInt(e.target.value) || 0
+                          }
                         })}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-900 bg-slate-900/40 text-sm text-slate-200 focus:outline-none focus:border-teal-500"
                       />

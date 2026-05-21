@@ -3,7 +3,7 @@ import CampusInfo from "../models/CampusInfo.js";
 // Helper to safely parse JSON fields of campus info
 const parseCampusInfo = (info) => {
   const infoJson = info.toJSON();
-  const fields = ["stats", "quickTips"];
+  const fields = ["stats", "quickTips", "maps"];
   fields.forEach((field) => {
     if (typeof infoJson[field] === "string") {
       try {

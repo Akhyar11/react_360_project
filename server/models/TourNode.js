@@ -42,6 +42,11 @@ const TourNode = sequelize.define("TourNode", {
     allowNull: false,
     defaultValue: { x: 50, y: 50 },
   },
+  mapId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: "kampus-utama",
+  },
   facilities: {
     type: DataTypes.JSON,
     allowNull: false,

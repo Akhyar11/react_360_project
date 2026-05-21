@@ -29,6 +29,24 @@ const CampusInfo = sequelize.define("CampusInfo", {
     allowNull: false,
     defaultValue: [],
   },
+  maps: {
+    type: DataTypes.JSON,
+    allowNull: false,
+    defaultValue: [
+      {
+        id: "kampus-utama",
+        name: "Kampus Utama (Pusat)",
+        imageUrl: "",
+        description: "Denah area Kampus Utama UAN"
+      },
+      {
+        id: "kampus-cabang",
+        name: "Kampus Cabang (Vokasi)",
+        imageUrl: "",
+        description: "Denah area Kampus Cabang Vokasi UAN"
+      }
+    ]
+  },
 }, {
   tableName: "campus_info",
   timestamps: true,
