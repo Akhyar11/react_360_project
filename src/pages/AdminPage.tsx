@@ -20,15 +20,22 @@ import {
   X,
   Users,
   UserPlus,
-  Shield
+  Shield,
+  LayoutGrid,
+  ArrowRightLeft,
+  Folder,
+  FolderOpen
 } from "lucide-react";
 import { campusInfo as fallbackInfo, tourNodes as fallbackNodes } from "../data/tourNodes";
 import type { TourNode } from "../types/tour";
+import { updateFavicon } from "../utils/favicon";
 
 export function AdminPage() {
   const [nodes, setNodes] = useState<TourNode[]>(fallbackNodes);
   const [campusInfo, setCampusInfo] = useState(fallbackInfo);
   const [activeTab, setActiveTab] = useState<"locations" | "campus" | "maps" | "users">("locations");
+  const [locationViewMode, setLocationViewMode] = useState<"grid" | "drag">("grid");
+  const [draggedOverMapId, setDraggedOverMapId] = useState<string | null>(null);
   const [adminName, setAdminName] = useState("Admin");
   const navigate = useNavigate();
   
@@ -49,7 +56,8 @@ export function AdminPage() {
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
-    document.title = "Admin Panel | UAN 360°";
+    document.title = `Admin Panel | ${campusInfo.name || "Kampus"} 360°`;
+    updateFavicon(campusInfo.logoUrl);
     
     // Auth Check
     const token = localStorage.getItem("admin_token");
@@ -62,8 +70,8 @@ export function AdminPage() {
     try {
       const userStr = localStorage.getItem("admin_user");
       if (userStr) {
-        const userObj = JSON.parse(userStr);
-        setAdminName(userObj.name || "Admin");
+        const user = JSON.parse(userStr);
+        setAdminName(user.name || user.username || "Admin");
       }
     } catch (e) {
       console.error(e);
@@ -84,6 +92,12 @@ export function AdminPage() {
       const resInfo = await fetch("http://localhost:5000/api/campus-info");
       if (resInfo.ok) {
         const dataInfo = await resInfo.json();
+        if (dataInfo.name) {
+          document.title = `Admin Panel | ${dataInfo.name} 360°`;
+        }
+        if (dataInfo.logoUrl) {
+          updateFavicon(dataInfo.logoUrl);
+        }
         if (dataInfo.maps && typeof dataInfo.maps === "string") {
           try {
             dataInfo.maps = JSON.parse(dataInfo.maps);
@@ -147,6 +161,38 @@ export function AdminPage() {
     });
     setFacilityInput("");
     setIsModalOpen(true);
+  };
+
+  const handleDropLocationOnMap = async (nodeId: string, targetMapId: string) => {
+    // Find the node
+    const nodeToUpdate = nodes.find((n) => n.id === nodeId);
+    if (!nodeToUpdate) return;
+
+    // Call API PUT /api/nodes/:id
+    setIsLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/nodes/${nodeId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
+        },
+        body: JSON.stringify({ ...nodeToUpdate, mapId: targetMapId })
+      });
+
+      if (!res.ok) {
+        throw new Error("Gagal mengupdate pengelompokan denah lokasi.");
+      }
+
+      showToast("success", `Sukses memindahkan "${nodeToUpdate.name}" ke denah/zona baru.`);
+      fetchData();
+    } catch (err: any) {
+      console.error(err);
+      showToast("error", err.message || "Gagal memindahkan lokasi.");
+    } finally {
+      setIsLoading(false);
+      setDraggedOverMapId(null);
+    }
   };
 
   const handleOpenEditModal = (node: TourNode) => {
@@ -718,80 +764,267 @@ export function AdminPage() {
         {/* --- TAB CONTENT: LOCATIONS --- */}
         {activeTab === "locations" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-white">Daftar Titik 360°</h2>
-                <p className="text-xs text-slate-500 font-light mt-1">Gunakan panel ini untuk mengedit data panorama, koordinat awal, dan detail fasilitas lokasi.</p>
+                <p className="text-xs text-slate-500 font-light mt-1">Kelola data panorama, koordinat awal, dan pengelompokan denah kampus.</p>
               </div>
-              <button
-                onClick={handleOpenAddModal}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-400 to-blue-500 text-slate-950 font-bold hover:scale-105 active:scale-95 transition-all shadow-lg"
-              >
-                <Plus className="w-4 h-4" />
-                Tambah Lokasi Baru
-              </button>
+              <div className="flex items-center gap-3 self-end sm:self-auto">
+                {/* View Mode Switcher */}
+                <div className="p-1 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-1">
+                  <button
+                    onClick={() => setLocationViewMode("grid")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      locationViewMode === "grid"
+                        ? "bg-teal-500 text-slate-950 shadow-md shadow-teal-500/10"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    Grid Preview
+                  </button>
+                  <button
+                    onClick={() => setLocationViewMode("drag")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      locationViewMode === "drag"
+                        ? "bg-teal-500 text-slate-950 shadow-md shadow-teal-500/10"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                    Folder Organizer (Drag & Drop)
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleOpenAddModal}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-400 to-blue-500 text-slate-950 font-bold hover:scale-105 active:scale-95 transition-all shadow-lg text-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  Tambah Lokasi Baru
+                </button>
+              </div>
             </div>
 
-            {/* Grid Locations */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {nodes.map((node) => (
-                <div key={node.id} className="p-5 rounded-2xl border border-slate-900 bg-slate-950 flex flex-col justify-between group hover:border-slate-800 transition-colors">
-                  <div>
-                    {/* Thumbnail Preview */}
-                    <div className="relative h-44 rounded-xl overflow-hidden mb-4 border border-slate-900">
-                      <img src={node.thumbnailUrl} alt={node.name} className="w-full h-full object-cover" />
-                      <div className="absolute top-3 left-3 px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-950/80 text-teal-400 border border-slate-800 backdrop-blur-sm">
-                        {node.category}
+            {/* Render Location View Modes */}
+            {locationViewMode === "grid" ? (
+              /* --- GRID VIEW --- */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {nodes.map((node) => (
+                  <div key={node.id} className="p-5 rounded-2xl border border-slate-900 bg-slate-950 flex flex-col justify-between group hover:border-slate-800 transition-colors">
+                    <div>
+                      {/* Thumbnail Preview */}
+                      <div className="relative h-44 rounded-xl overflow-hidden mb-4 border border-slate-900">
+                        <img src={node.thumbnailUrl} alt={node.name} className="w-full h-full object-cover" />
+                        <div className="absolute top-3 left-3 px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-950/80 text-teal-400 border border-slate-800 backdrop-blur-sm">
+                          {node.category}
+                        </div>
+                      </div>
+
+                      <h3 className="font-bold text-white text-lg leading-snug">{node.name}</h3>
+                      <p className="text-[10px] text-slate-500 font-bold font-mono tracking-wider mt-1">{node.id}</p>
+                      <p className="text-xs text-slate-400 font-light mt-3 line-clamp-2 leading-relaxed">
+                        {node.description}
+                      </p>
+
+                      {/* Facilities Tag List */}
+                      <div className="flex flex-wrap gap-1.5 mt-4">
+                        {node.facilities?.slice(0, 3).map((fac, idx) => (
+                          <span key={idx} className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-500 font-light">
+                            {fac}
+                          </span>
+                        ))}
+                        {(node.facilities?.length || 0) > 3 && (
+                          <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-teal-400 font-bold">
+                            +{(node.facilities?.length || 0) - 3}
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    <h3 className="font-bold text-white text-lg leading-snug">{node.name}</h3>
-                    <p className="text-[10px] text-slate-500 font-bold font-mono tracking-wider mt-1">{node.id}</p>
-                    <p className="text-xs text-slate-400 font-light mt-3 line-clamp-2 leading-relaxed">
-                      {node.description}
-                    </p>
-
-                    {/* Facilities Tag List */}
-                    <div className="flex flex-wrap gap-1.5 mt-4">
-                      {node.facilities?.slice(0, 3).map((fac, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-500 font-light">
-                          {fac}
-                        </span>
-                      ))}
-                      {(node.facilities?.length || 0) > 3 && (
-                        <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-teal-400 font-bold">
-                          +{(node.facilities?.length || 0) - 3}
-                        </span>
-                      )}
+                    {/* Actions Bar */}
+                    <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-900/60">
+                      <Link
+                        to={`/tour/${node.id}`}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs font-semibold transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Preview
+                      </Link>
+                      <button
+                        onClick={() => handleOpenEditModal(node)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 text-xs font-semibold transition-colors"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteNode(node.id, node.name)}
+                        className="inline-flex items-center justify-center p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              /* --- DYNAMIC DRAG & DROP ZONES ORGANIZER --- */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left side: Maps Drop Zones (Folders) */}
+                <div className="lg:col-span-4 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Folder / Denah Tujuan (Drop Zones)</h3>
+                  
+                  {/* Default/Primary Map: Rektorat/Kampus Utama */}
+                  {(() => {
+                    const primaryMapId = "kampus-utama";
+                    const hasPrimaryInDynamic = ((campusInfo as any).maps || []).some((m: any) => m.id === primaryMapId);
+                    if (hasPrimaryInDynamic) return null;
 
-                  {/* Actions Bar */}
-                  <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-900/60">
-                    <Link
-                      to={`/tour/${node.id}`}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs font-semibold transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      Preview
-                    </Link>
-                    <button
-                      onClick={() => handleOpenEditModal(node)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 text-xs font-semibold transition-colors"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteNode(node.id, node.name)}
-                      className="inline-flex items-center justify-center p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    const count = nodes.filter(n => (n.mapId || "kampus-utama") === primaryMapId).length;
+                    const isOver = draggedOverMapId === primaryMapId;
+                    
+                    return (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDraggedOverMapId(primaryMapId);
+                        }}
+                        onDragLeave={() => setDraggedOverMapId(null)}
+                        onDrop={(e) => {
+                          const nodeId = e.dataTransfer.getData("text/plain");
+                          handleDropLocationOnMap(nodeId, primaryMapId);
+                        }}
+                        className={`p-4 rounded-2xl border transition-all duration-300 ${
+                          isOver 
+                            ? "border-teal-400 bg-teal-500/10 scale-102 shadow-lg shadow-teal-500/10" 
+                            : "border-slate-900 bg-slate-950/60"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2.5 rounded-xl border ${isOver ? "bg-teal-500/20 border-teal-500/40 text-teal-400" : "bg-slate-900 border-slate-800 text-slate-400"}`}>
+                              {isOver ? <FolderOpen className="w-5 h-5" /> : <Folder className="w-5 h-5" />}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-white text-xs leading-none">Kampus Utama (Rektorat)</h4>
+                              <p className="text-[9px] text-slate-500 font-light mt-1">Grup Utama / Default</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] bg-slate-900/60 border border-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono font-bold">
+                            {count} Lokasi
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Dynamic Maps Drop Zones */}
+                  {((campusInfo as any).maps || []).map((map: any) => {
+                    const count = nodes.filter(n => (n.mapId || "kampus-utama") === map.id).length;
+                    const isOver = draggedOverMapId === map.id;
+
+                    return (
+                      <div
+                        key={map.id}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDraggedOverMapId(map.id);
+                        }}
+                        onDragLeave={() => setDraggedOverMapId(null)}
+                        onDrop={(e) => {
+                          const nodeId = e.dataTransfer.getData("text/plain");
+                          handleDropLocationOnMap(nodeId, map.id);
+                        }}
+                        className={`p-4 rounded-2xl border transition-all duration-300 ${
+                          isOver 
+                            ? "border-teal-400 bg-teal-500/10 scale-102 shadow-lg shadow-teal-500/10" 
+                            : "border-slate-900 bg-slate-950/60"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2.5 rounded-xl border ${isOver ? "bg-teal-500/20 border-teal-500/40 text-teal-400" : "bg-slate-900 border-slate-800 text-slate-400"}`}>
+                              {isOver ? <FolderOpen className="w-5 h-5" /> : <Folder className="w-5 h-5" />}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-white text-xs leading-none">{map.name}</h4>
+                              <p className="text-[9px] text-slate-500 font-light mt-1">ID: {map.id}</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] bg-slate-900/60 border border-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono font-bold">
+                            {count} Lokasi
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Right side: List of Draggable Locations */}
+                <div className="lg:col-span-8 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Daftar Kredensial Lokasi (Seret & Pindahkan)</h3>
+                    <p className="text-[10px] text-teal-400/80 font-bold italic">💡 Petunjuk: Seret titik lokasi dan jatuhkan ke salah satu folder peta di kiri</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {nodes.map((node) => {
+                      const currentMap = ((campusInfo as any).maps || []).find((m: any) => m.id === node.mapId) || { name: "Kampus Utama (Rektorat)" };
+                      
+                      return (
+                        <div
+                          key={node.id}
+                          draggable={true}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("text/plain", node.id);
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
+                          className="p-4 rounded-2xl border border-slate-900 bg-slate-950 flex flex-col justify-between gap-3 hover:border-slate-800 transition-colors cursor-grab active:cursor-grabbing hover:bg-slate-900/10 active:border-teal-500/40 relative group"
+                        >
+                          {/* Drag Handle Indicator */}
+                          <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                          </div>
+
+                          <div className="flex gap-3">
+                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-900 shrink-0">
+                              <img src={node.thumbnailUrl} alt={node.name} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-white text-xs truncate leading-snug">{node.name}</h4>
+                              <p className="text-[9px] text-slate-500 font-mono mt-0.5">@{node.id}</p>
+                              
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-2.5">
+                                <Folder className="w-2.5 h-2.5 text-teal-400 mr-1" />
+                                {currentMap.name}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 border-t border-slate-900 pt-3">
+                            <Link
+                              to={`/tour/${node.id}`}
+                              className="flex-1 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-[10px] font-semibold text-center transition-colors"
+                            >
+                              Preview
+                            </Link>
+                            <button
+                              onClick={() => handleOpenEditModal(node)}
+                              className="flex-1 py-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 text-[10px] font-semibold transition-colors"
+                            >
+                              Edit Details
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 

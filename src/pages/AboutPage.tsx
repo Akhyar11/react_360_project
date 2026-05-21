@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { School, Compass, ArrowLeft, Users, Clock, Globe2, Cpu, GraduationCap, Map } from "lucide-react";
 import { campusInfo as fallbackInfo } from "../data/tourNodes";
+import { updateFavicon } from "../utils/favicon";
 
 export function AboutPage() {
   const [info, setInfo] = useState(fallbackInfo);
 
   useEffect(() => {
-    document.title = "Tentang UAN | Virtual Campus Tour";
+    document.title = `Tentang ${info.name || "Kampus"} | Virtual Campus Tour`;
+    updateFavicon(info.logoUrl);
 
     // Fetch dynamic campus info from backend
     fetch("/api/campus-info")
@@ -15,7 +17,11 @@ export function AboutPage() {
         if (!res.ok) throw new Error("HTTP error " + res.status);
         return res.json();
       })
-      .then((data) => setInfo(data))
+      .then((data) => {
+        setInfo(data);
+        document.title = `Tentang ${data.name || "Kampus"} | Virtual Campus Tour`;
+        updateFavicon(data.logoUrl);
+      })
       .catch((err) => console.log("Backend offline, menggunakan data statis lokal: ", err));
   }, []);
 
@@ -29,12 +35,16 @@ export function AboutPage() {
       <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="bg-gradient-to-tr from-teal-400 to-blue-500 p-2 rounded-xl text-slate-950 shadow-lg shadow-teal-500/20 group-hover:scale-105 transition-transform duration-300">
-              <School className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300">
+              {info.logoUrl ? (
+                <img src={info.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+              ) : (
+                <School className="w-5 h-5 text-teal-400" />
+              )}
             </div>
             <div>
               <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                UAN 360°
+                {info.name || "Kampus"} 360°
               </span>
               <span className="block text-[10px] text-teal-400 font-medium tracking-widest uppercase">
                 Virtual Campus Tour
@@ -59,10 +69,10 @@ export function AboutPage() {
         </Link>
 
         <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
-          Tentang <span className="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">Virtual Tour UAN</span>
+          Tentang <span className="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">Virtual Tour {info.name || "Kampus"}</span>
         </h1>
         <p className="text-slate-400 font-light text-lg mb-12 leading-relaxed">
-          Platform Virtual Campus Tour ini adalah inisiatif digital dari Universitas Antigravity Nusantara (UAN) untuk menghadirkan seluruh area kampus ke layar gadget Anda. Dengan pemotretan panorama 360 derajat berkualitas tinggi, kami mengundang dunia untuk menjelajahi fasilitas riset, gedung perkuliahan, dan pemandangan alam kami.
+          Platform Virtual Campus Tour ini adalah inisiatif digital dari {info.name || "Kampus Kami"} untuk menghadirkan seluruh area kampus ke layar gadget Anda. Dengan pemotretan panorama 360 derajat berkualitas tinggi, kami mengundang dunia untuk menjelajahi fasilitas riset, gedung perkuliahan, dan pemandangan alam kami.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
@@ -70,7 +80,7 @@ export function AboutPage() {
             <GraduationCap className="w-8 h-8 text-teal-400 mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">Visi Kami</h3>
             <p className="text-sm text-slate-400 leading-relaxed font-light">
-              Mewujudkan aksesibilitas informasi tanpa batas bagi calon mahasiswa dan peneliti di seluruh dunia guna mengenal budaya inovasi yang dinamis di lingkungan kampus UAN.
+              Mewujudkan aksesibilitas informasi tanpa batas bagi calon mahasiswa dan peneliti di seluruh dunia guna mengenal budaya inovasi yang dinamis di lingkungan kampus {info.name || "kami"}.
             </p>
           </div>
           <div className="p-6 rounded-2xl border border-slate-900 bg-slate-900/20 backdrop-blur-sm">

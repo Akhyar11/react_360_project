@@ -9,6 +9,7 @@ import { LocationInfoPanel } from "../components/tour/LocationInfoPanel";
 import { TourControls } from "../components/tour/TourControls";
 import { MiniMap } from "../components/tour/MiniMap";
 import type { InfoHotspot } from "../types/tour";
+import { updateFavicon } from "../utils/favicon";
 
 export function TourPage() {
   const { locationId } = useParams<{ locationId?: string }>();
@@ -38,6 +39,7 @@ export function TourPage() {
       .then((data) => {
         if (data.maps) setMaps(data.maps);
         if (data.name) setCampusName(data.name);
+        if (data.logoUrl) updateFavicon(data.logoUrl);
       })
       .catch((err) => console.log("Gagal mengambil data maps:", err));
   }, []);

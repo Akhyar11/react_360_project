@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Compass, Info, MapPin, School, ArrowRight, HelpCircle, Settings } from "lucide-react";
 import { campusInfo as fallbackInfo, tourNodes as fallbackNodes } from "../data/tourNodes";
+import { updateFavicon } from "../utils/favicon";
 
 export function LandingPage() {
   const [nodes, setNodes] = useState(fallbackNodes);
@@ -9,6 +10,7 @@ export function LandingPage() {
 
   useEffect(() => {
     document.title = `${info.name || "Kampus"} 360° | Virtual Campus Tour`;
+    updateFavicon(info.logoUrl);
 
     // Fetch dynamic data from the Express backend
     fetch("/api/nodes")
@@ -27,6 +29,7 @@ export function LandingPage() {
       .then((data) => {
         setInfo(data);
         document.title = `${data.name || "Kampus"} 360° | Virtual Campus Tour`;
+        updateFavicon(data.logoUrl);
       })
       .catch((err) => console.log("Backend offline, menggunakan data statis lokal: ", err));
   }, [info.name]);

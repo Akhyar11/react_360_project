@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { School, Lock, User, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { updateFavicon } from "../utils/favicon";
 
 export function LoginPage() {
   const [username, setUsername] = useState("");
@@ -10,14 +11,35 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const [campusName, setCampusName] = useState("Kampus");
+
   useEffect(() => {
-    document.title = "Login Admin | UAN 360°";
+    document.title = `Login Admin | ${campusName} 360°`;
     
     // Redirect immediately if already logged in
     const token = localStorage.getItem("admin_token");
     if (token) {
       navigate("/admin", { replace: true });
     }
+
+    // Fetch dynamic campus info
+    fetch("/api/campus-info")
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data) => {
+        if (data.name) {
+          setCampusName(data.name);
+          document.title = `Login Admin | ${data.name} 360°`;
+        }
+        if (data.logoUrl) {
+          updateFavicon(data.logoUrl);
+        }
+      })
+      .catch(() => {
+        document.title = "Login Admin | Kampus 360°";
+      });
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
