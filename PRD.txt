@@ -1,0 +1,1280 @@
+# Product Requirements Document (PRD)
+
+# Website 360 Campus Tour — Frontend Only dengan Vite
+
+## 1. Ringkasan Produk
+
+Website 360 Campus Tour adalah aplikasi web interaktif yang memungkinkan pengguna menjelajahi area kampus secara virtual melalui foto panorama 360 derajat. Pada tahap awal, produk hanya dikembangkan sebagai frontend tanpa backend dan tanpa admin panel. Semua data lokasi, hotspot, informasi ruangan, dan konfigurasi tour disimpan secara statis dalam file JSON.
+
+Website ini ditujukan untuk calon mahasiswa, orang tua, mitra kampus, mahasiswa baru, dan publik umum yang ingin melihat fasilitas kampus secara online tanpa harus datang langsung ke lokasi.
+
+## 2. Tujuan Produk
+
+Tujuan utama produk ini adalah menyediakan pengalaman virtual tour kampus yang mudah diakses, ringan, responsif, dan informatif.
+
+Tujuan spesifik:
+
+1. Menampilkan foto panorama 360 derajat dari berbagai titik lokasi kampus.
+2. Memungkinkan pengguna berpindah dari satu lokasi ke lokasi lain menggunakan hotspot.
+3. Menampilkan informasi singkat setiap lokasi, seperti nama tempat, deskripsi, dan fasilitas.
+4. Menyediakan navigasi daftar lokasi agar pengguna bisa langsung memilih area tertentu.
+5. Mendukung tampilan desktop dan mobile.
+6. Menggunakan teknologi frontend modern berbasis Vite, bukan Next.js.
+7. Menyediakan struktur data yang mudah dikembangkan menjadi admin panel di tahap berikutnya.
+
+## 3. Ruang Lingkup Produk
+
+### 3.1 Dalam Scope Tahap Awal
+
+Fitur yang termasuk dalam tahap awal:
+
+* Landing page sederhana.
+* Halaman virtual tour 360.
+* Viewer panorama 360.
+* Hotspot untuk berpindah lokasi.
+* Hotspot informasi.
+* Sidebar atau drawer daftar lokasi.
+* Mini map atau denah sederhana opsional.
+* Detail informasi lokasi.
+* Data tour berbasis file JSON.
+* Asset panorama disimpan di folder public atau object storage eksternal.
+* Responsive design untuk desktop, tablet, dan mobile.
+* Loading state saat panorama dimuat.
+* Fallback jika gambar panorama gagal dimuat.
+* Tombol fullscreen.
+* Tombol kembali ke landing page.
+* Build menggunakan Vite.
+
+### 3.2 Di Luar Scope Tahap Awal
+
+Fitur berikut tidak dikerjakan pada tahap frontend-only:
+
+* Admin panel.
+* Login admin.
+* Database.
+* Upload foto 360 dari dashboard.
+* CRUD lokasi via backend.
+* Role management.
+* Analytics dashboard.
+* Komentar pengguna.
+* Booking kunjungan kampus.
+* Integrasi Google Maps real-time.
+* Multi-language dinamis dari backend.
+* CMS.
+* API backend.
+
+## 4. Target Pengguna
+
+### 4.1 Calon Mahasiswa
+
+Calon mahasiswa ingin melihat suasana kampus, fasilitas, gedung, laboratorium, ruang kelas, perpustakaan, dan area umum sebelum mendaftar.
+
+Kebutuhan utama:
+
+* Mudah melihat fasilitas kampus.
+* Bisa berpindah lokasi dengan jelas.
+* Bisa memahami fungsi setiap tempat.
+* Bisa digunakan dari HP.
+
+### 4.2 Orang Tua
+
+Orang tua ingin mengetahui kondisi dan fasilitas kampus tempat anaknya akan kuliah.
+
+Kebutuhan utama:
+
+* Informasi lokasi yang jelas.
+* Tampilan sederhana dan tidak membingungkan.
+* Akses mudah tanpa instal aplikasi.
+
+### 4.3 Mahasiswa Baru
+
+Mahasiswa baru ingin mengenali area kampus sebelum datang secara langsung.
+
+Kebutuhan utama:
+
+* Navigasi antar lokasi.
+* Daftar gedung atau ruangan.
+* Informasi singkat tiap lokasi.
+
+### 4.4 Pihak Kampus
+
+Pihak kampus ingin memiliki media promosi digital yang modern dan mudah dibagikan.
+
+Kebutuhan utama:
+
+* Website terlihat profesional.
+* Mudah dibuka dari browser.
+* Dapat digunakan untuk promosi PMB.
+
+## 5. Platform dan Teknologi
+
+### 5.1 Frontend Framework
+
+Framework utama:
+
+```txt
+Vite + React
+```
+
+Alasan menggunakan Vite:
+
+* Lebih ringan untuk frontend-only.
+* Development server cepat.
+* Build sederhana.
+* Cocok untuk SPA.
+* Tidak membutuhkan server-side rendering.
+* Struktur project lebih sederhana dibanding Next.js.
+* Cocok untuk deployment di Netlify, Vercel, GitHub Pages, atau hosting kampus.
+
+### 5.2 Library Utama
+
+Rekomendasi stack:
+
+```txt
+Vite
+React
+TypeScript
+Tailwind CSS
+Photo Sphere Viewer
+React Router DOM
+Lucide React
+```
+
+### 5.3 360 Viewer
+
+Library utama untuk panorama:
+
+```txt
+Photo Sphere Viewer
+```
+
+Plugin yang direkomendasikan:
+
+```txt
+VirtualTourPlugin
+MarkersPlugin
+GalleryPlugin opsional
+MapPlugin atau PlanPlugin opsional
+```
+
+### 5.4 Styling
+
+Styling menggunakan:
+
+```txt
+Tailwind CSS
+```
+
+Alasan:
+
+* Cepat untuk membuat UI responsif.
+* Mudah menjaga konsistensi desain.
+* Cocok untuk dashboard-like layout, sidebar, drawer, dan overlay.
+
+### 5.5 Routing
+
+Routing menggunakan:
+
+```txt
+React Router DOM
+```
+
+Contoh rute:
+
+```txt
+/                 Landing page
+/tour             Halaman utama virtual tour
+/tour/:locationId Lokasi tertentu dalam virtual tour
+/about            Informasi singkat campus tour
+```
+
+## 6. Arsitektur Produk
+
+### 6.1 Jenis Aplikasi
+
+Aplikasi berupa Single Page Application atau SPA.
+
+Semua konten dimuat dari file lokal/static JSON. Tidak ada request ke backend internal pada tahap awal.
+
+### 6.2 Struktur Data
+
+Data utama disimpan dalam file:
+
+```txt
+src/data/tour-nodes.json
+```
+
+Atau jika memakai TypeScript:
+
+```txt
+src/data/tourNodes.ts
+```
+
+### 6.3 Struktur Folder Rekomendasi
+
+```txt
+src/
+  assets/
+  components/
+    layout/
+      AppLayout.tsx
+      Header.tsx
+      Sidebar.tsx
+      MobileDrawer.tsx
+    tour/
+      TourViewer.tsx
+      TourHotspot.tsx
+      LocationInfoPanel.tsx
+      LocationList.tsx
+      TourControls.tsx
+      MiniMap.tsx
+    ui/
+      Button.tsx
+      Card.tsx
+      Badge.tsx
+      Loader.tsx
+      ErrorState.tsx
+  data/
+    tourNodes.ts
+    campusInfo.ts
+  hooks/
+    useTourNavigation.ts
+    useIsMobile.ts
+  pages/
+    LandingPage.tsx
+    TourPage.tsx
+    AboutPage.tsx
+    NotFoundPage.tsx
+  routes/
+    AppRoutes.tsx
+  types/
+    tour.ts
+  utils/
+    panorama.ts
+    format.ts
+  App.tsx
+  main.tsx
+```
+
+Public assets:
+
+```txt
+public/
+  panoramas/
+    gerbang-kampus.jpg
+    lobby.jpg
+    perpustakaan.jpg
+    laboratorium.jpg
+    aula.jpg
+  maps/
+    denah-kampus.png
+  icons/
+```
+
+## 7. Fitur Produk
+
+## 7.1 Landing Page
+
+### Deskripsi
+
+Halaman awal yang memperkenalkan 360 Campus Tour dan mengarahkan pengguna untuk mulai menjelajah.
+
+### Tujuan
+
+Memberikan konteks kepada pengguna sebelum masuk ke pengalaman virtual tour.
+
+### Elemen UI
+
+* Hero section.
+* Judul produk.
+* Deskripsi singkat.
+* Tombol “Mulai Tour”.
+* Preview gambar kampus.
+* Section daftar fasilitas utama.
+* Section cara menggunakan tour.
+* Footer sederhana.
+
+### Acceptance Criteria
+
+* Pengguna dapat membuka halaman utama.
+* Tombol “Mulai Tour” mengarah ke `/tour`.
+* Halaman responsif di mobile dan desktop.
+* Loading halaman cepat.
+
+## 7.2 Halaman Virtual Tour
+
+### Deskripsi
+
+Halaman utama tempat pengguna melihat panorama 360 dan berpindah antar lokasi.
+
+### Elemen UI
+
+* Area panorama 360 full-screen atau hampir full-screen.
+* Sidebar daftar lokasi untuk desktop.
+* Drawer daftar lokasi untuk mobile.
+* Panel informasi lokasi.
+* Hotspot navigasi.
+* Hotspot informasi.
+* Tombol fullscreen.
+* Tombol show/hide UI.
+* Tombol kembali ke landing page.
+* Loading indicator saat panorama berganti.
+
+### Acceptance Criteria
+
+* Panorama berhasil ditampilkan.
+* Pengguna bisa drag/geser untuk melihat sekeliling.
+* Pengguna bisa zoom in/out.
+* Pengguna bisa berpindah lokasi lewat hotspot.
+* Pengguna bisa memilih lokasi dari daftar.
+* URL berubah sesuai lokasi jika menggunakan route `/tour/:locationId`.
+* Jika lokasi tidak ditemukan, pengguna diarahkan ke lokasi default.
+
+## 7.3 Daftar Lokasi
+
+### Deskripsi
+
+Daftar semua titik virtual tour yang tersedia.
+
+### Elemen Data
+
+Setiap lokasi memiliki:
+
+* Nama lokasi.
+* Kategori lokasi.
+* Thumbnail opsional.
+* Status aktif.
+
+### Contoh Kategori
+
+```txt
+Gerbang
+Gedung Utama
+Ruang Kelas
+Laboratorium
+Perpustakaan
+Fasilitas Umum
+Area Outdoor
+Aula
+```
+
+### Acceptance Criteria
+
+* Daftar lokasi muncul di desktop sebagai sidebar.
+* Daftar lokasi muncul di mobile sebagai drawer.
+* Lokasi aktif diberi penanda visual.
+* Klik lokasi mengganti panorama.
+
+## 7.4 Hotspot Navigasi
+
+### Deskripsi
+
+Hotspot navigasi digunakan untuk berpindah dari satu panorama ke panorama lain.
+
+### Perilaku
+
+Saat pengguna klik hotspot, sistem akan:
+
+1. Menampilkan loading state.
+2. Mengganti panorama ke lokasi tujuan.
+3. Mengubah informasi lokasi.
+4. Mengubah URL jika routing lokasi diaktifkan.
+
+### Acceptance Criteria
+
+* Hotspot terlihat jelas di panorama.
+* Hotspot memiliki label saat hover atau tap.
+* Klik hotspot memindahkan pengguna ke lokasi tujuan.
+* Jika target lokasi tidak valid, sistem menampilkan error non-blocking.
+
+## 7.5 Hotspot Informasi
+
+### Deskripsi
+
+Hotspot informasi digunakan untuk menampilkan detail tertentu di dalam panorama, misalnya nama fasilitas, keterangan ruangan, atau catatan khusus.
+
+### Contoh
+
+* “Ruang Administrasi”
+* “Area Informasi PMB”
+* “Laboratorium Komputer”
+* “Kapasitas 40 mahasiswa”
+
+### Acceptance Criteria
+
+* Hotspot informasi bisa diklik.
+* Setelah diklik, muncul tooltip, popover, atau panel kecil.
+* Hotspot informasi tidak mengganti lokasi.
+
+## 7.6 Panel Informasi Lokasi
+
+### Deskripsi
+
+Panel yang menampilkan detail lokasi aktif.
+
+### Konten
+
+* Nama lokasi.
+* Kategori lokasi.
+* Deskripsi singkat.
+* Fasilitas tersedia.
+* Jam operasional opsional.
+* Catatan tambahan opsional.
+
+### Acceptance Criteria
+
+* Informasi sesuai lokasi aktif.
+* Panel bisa ditutup di mobile.
+* Tampilan tidak mengganggu area panorama.
+
+## 7.7 Mini Map atau Denah Kampus Opsional
+
+### Deskripsi
+
+Mini map menampilkan gambaran posisi lokasi dalam area kampus.
+
+Pada tahap awal, mini map bisa berupa gambar denah statis dengan marker sederhana.
+
+### Acceptance Criteria
+
+* Mini map bisa ditampilkan atau disembunyikan.
+* Lokasi aktif diberi marker berbeda.
+* Klik marker dapat mengganti lokasi.
+
+## 7.8 Fullscreen Mode
+
+### Deskripsi
+
+Pengguna dapat melihat tour dalam mode fullscreen.
+
+### Acceptance Criteria
+
+* Tombol fullscreen tersedia.
+* Saat diklik, viewer masuk fullscreen jika browser mendukung.
+* Jika tidak didukung, tombol tidak menyebabkan error.
+
+## 7.9 Responsive Design
+
+### Desktop
+
+* Sidebar lokasi di sisi kiri atau kanan.
+* Viewer mengambil area utama.
+* Panel info dapat tampil sebagai overlay.
+
+### Mobile
+
+* Viewer full-screen.
+* Navigasi lokasi menggunakan bottom sheet atau drawer.
+* Tombol kontrol lebih besar agar mudah disentuh.
+* Panel info dapat dibuka/tutup.
+
+### Acceptance Criteria
+
+* Layout tidak rusak pada layar kecil.
+* Hotspot tetap bisa diklik di mobile.
+* Teks tetap terbaca.
+
+## 8. Struktur Data Tour
+
+### 8.1 TypeScript Type
+
+```ts
+export type TourNode = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  panoramaUrl: string;
+  thumbnailUrl?: string;
+  defaultYaw?: number;
+  defaultPitch?: number;
+  mapPosition?: {
+    x: number;
+    y: number;
+  };
+  facilities?: string[];
+  navigationHotspots: NavigationHotspot[];
+  infoHotspots: InfoHotspot[];
+};
+
+export type NavigationHotspot = {
+  id: string;
+  targetNodeId: string;
+  label: string;
+  yaw: number;
+  pitch: number;
+};
+
+export type InfoHotspot = {
+  id: string;
+  label: string;
+  description: string;
+  yaw: number;
+  pitch: number;
+};
+```
+
+### 8.2 Contoh Data
+
+```ts
+export const tourNodes = [
+  {
+    id: "gerbang-kampus",
+    name: "Gerbang Kampus",
+    category: "Area Outdoor",
+    description: "Titik masuk utama menuju area kampus.",
+    panoramaUrl: "/panoramas/gerbang-kampus.jpg",
+    thumbnailUrl: "/panoramas/thumbs/gerbang-kampus.jpg",
+    defaultYaw: 0,
+    defaultPitch: 0,
+    mapPosition: {
+      x: 32,
+      y: 78
+    },
+    facilities: ["Akses utama", "Pos keamanan", "Area drop-off"],
+    navigationHotspots: [
+      {
+        id: "to-lobby",
+        targetNodeId: "lobby-utama",
+        label: "Menuju Lobby Utama",
+        yaw: 1.45,
+        pitch: 0.05
+      }
+    ],
+    infoHotspots: [
+      {
+        id: "info-pos-security",
+        label: "Pos Keamanan",
+        description: "Area penjagaan dan informasi awal pengunjung.",
+        yaw: -0.8,
+        pitch: 0.02
+      }
+    ]
+  },
+  {
+    id: "lobby-utama",
+    name: "Lobby Utama",
+    category: "Gedung Utama",
+    description: "Area penerimaan tamu dan pusat informasi kampus.",
+    panoramaUrl: "/panoramas/lobby-utama.jpg",
+    thumbnailUrl: "/panoramas/thumbs/lobby-utama.jpg",
+    defaultYaw: 0.5,
+    defaultPitch: 0,
+    mapPosition: {
+      x: 45,
+      y: 62
+    },
+    facilities: ["Resepsionis", "Ruang tunggu", "Informasi akademik"],
+    navigationHotspots: [
+      {
+        id: "to-gerbang",
+        targetNodeId: "gerbang-kampus",
+        label: "Kembali ke Gerbang Kampus",
+        yaw: -2.1,
+        pitch: 0
+      },
+      {
+        id: "to-perpustakaan",
+        targetNodeId: "perpustakaan",
+        label: "Menuju Perpustakaan",
+        yaw: 1.8,
+        pitch: 0.04
+      }
+    ],
+    infoHotspots: []
+  }
+];
+```
+
+## 9. User Flow
+
+## 9.1 Flow Masuk Tour dari Landing Page
+
+```txt
+User membuka website
+↓
+User melihat landing page
+↓
+User klik “Mulai Tour”
+↓
+User masuk ke /tour
+↓
+Sistem menampilkan lokasi default
+↓
+User menjelajah panorama 360
+```
+
+## 9.2 Flow Berpindah Lokasi via Hotspot
+
+```txt
+User berada di satu panorama
+↓
+User melihat hotspot navigasi
+↓
+User klik hotspot
+↓
+Sistem memuat panorama target
+↓
+Panel informasi lokasi diperbarui
+↓
+Lokasi aktif pada sidebar diperbarui
+```
+
+## 9.3 Flow Berpindah Lokasi via Sidebar
+
+```txt
+User membuka daftar lokasi
+↓
+User memilih lokasi tertentu
+↓
+Sistem memuat panorama lokasi tersebut
+↓
+URL dan informasi lokasi diperbarui
+```
+
+## 10. Kebutuhan UI/UX
+
+### 10.1 Prinsip Desain
+
+* Clean dan modern.
+* Fokus utama tetap pada panorama.
+* Kontrol tidak boleh terlalu menutupi tampilan 360.
+* Warna menyesuaikan identitas kampus.
+* Navigasi mudah dipahami oleh pengguna awam.
+
+### 10.2 Komponen Utama
+
+* Header minimal.
+* Sidebar lokasi.
+* Viewer 360.
+* Floating controls.
+* Info panel.
+* Mobile drawer.
+* Loading overlay.
+* Error state.
+
+### 10.3 Warna
+
+Warna final dapat menyesuaikan brand kampus. Rekomendasi awal:
+
+```txt
+Primary: biru kampus
+Secondary: putih
+Accent: kuning atau hijau
+Background: slate/neutral ringan
+Text: dark gray
+```
+
+### 10.4 Tipografi
+
+Rekomendasi:
+
+```txt
+Inter
+Poppins
+Plus Jakarta Sans
+```
+
+## 11. Kebutuhan Fungsional
+
+### FR-001 — Menampilkan Landing Page
+
+Sistem harus menampilkan halaman pembuka berisi informasi singkat dan tombol masuk ke virtual tour.
+
+### FR-002 — Menampilkan Panorama 360
+
+Sistem harus dapat menampilkan foto panorama 360 berdasarkan lokasi aktif.
+
+### FR-003 — Navigasi Antar Lokasi via Hotspot
+
+Sistem harus memungkinkan pengguna berpindah lokasi dengan klik hotspot pada panorama.
+
+### FR-004 — Navigasi Antar Lokasi via Daftar Lokasi
+
+Sistem harus menyediakan daftar lokasi yang dapat diklik.
+
+### FR-005 — Menampilkan Informasi Lokasi
+
+Sistem harus menampilkan informasi lokasi aktif.
+
+### FR-006 — Menampilkan Hotspot Informasi
+
+Sistem harus menampilkan hotspot informasi yang tidak mengubah lokasi.
+
+### FR-007 — Loading State
+
+Sistem harus menampilkan loading state saat panorama sedang dimuat.
+
+### FR-008 — Error State
+
+Sistem harus menampilkan pesan error jika gambar panorama gagal dimuat.
+
+### FR-009 — Fullscreen
+
+Sistem harus menyediakan opsi fullscreen untuk viewer.
+
+### FR-010 — Mobile Responsive
+
+Sistem harus dapat digunakan dengan nyaman pada perangkat mobile.
+
+### FR-011 — Deep Link Lokasi
+
+Sistem sebaiknya mendukung URL langsung ke lokasi tertentu, misalnya `/tour/perpustakaan`.
+
+### FR-012 — Konfigurasi Lokasi Default
+
+Sistem harus memiliki lokasi default yang ditampilkan saat user membuka `/tour`.
+
+## 12. Kebutuhan Non-Fungsional
+
+### 12.1 Performance
+
+* Halaman landing page harus ringan.
+* Panorama tidak boleh dimuat semuanya sekaligus.
+* Gambar panorama dimuat sesuai lokasi aktif.
+* Thumbnail boleh dimuat lebih awal.
+* Gunakan format gambar yang dioptimalkan.
+
+Target:
+
+```txt
+Initial load landing page < 3 detik pada koneksi normal
+Perpindahan panorama idealnya < 2 detik setelah gambar tersedia/cache
+```
+
+### 12.2 Compatibility
+
+Harus mendukung browser modern:
+
+* Chrome.
+* Edge.
+* Firefox.
+* Safari.
+* Mobile Chrome.
+* Mobile Safari.
+
+### 12.3 Accessibility
+
+* Tombol memiliki label yang jelas.
+* Kontras teks cukup.
+* Navigasi utama dapat digunakan dengan keyboard sejauh memungkinkan.
+* Gambar memiliki fallback text.
+* Tidak hanya mengandalkan warna untuk menunjukkan status aktif.
+
+### 12.4 Maintainability
+
+* Data tour dipisah dari komponen UI.
+* TypeScript digunakan untuk mengurangi error struktur data.
+* Komponen dibuat modular.
+* Tidak hardcode lokasi langsung di komponen viewer.
+
+### 12.5 Scalability Frontend
+
+Walaupun belum ada backend, struktur harus siap jika nanti data dipindahkan ke API.
+
+Contoh prinsip:
+
+```txt
+Saat ini: import tourNodes from src/data/tourNodes.ts
+Nanti: fetch /api/tour-nodes
+```
+
+## 13. Batasan Teknis
+
+1. Tidak ada backend pada tahap awal.
+2. Tidak ada admin panel.
+3. Semua perubahan lokasi dan hotspot dilakukan oleh developer melalui file JSON/TypeScript.
+4. Foto panorama harus sudah tersedia sebelum dimasukkan ke aplikasi.
+5. Ukuran file panorama perlu dioptimalkan agar website tidak berat.
+6. Browser lama yang tidak mendukung WebGL mungkin tidak dapat menjalankan tour dengan baik.
+
+## 14. Format Asset Foto 360
+
+### 14.1 Spesifikasi Foto Panorama
+
+Rekomendasi:
+
+```txt
+Format: JPG atau WebP
+Rasio: 2:1 equirectangular
+Contoh resolusi: 4096x2048 atau 6000x3000
+Ukuran file ideal: 1–4 MB per panorama setelah kompresi
+```
+
+### 14.2 Penamaan File
+
+Gunakan format konsisten:
+
+```txt
+gerbang-kampus.jpg
+lobby-utama.jpg
+perpustakaan.jpg
+lab-komputer.jpg
+aula-kampus.jpg
+```
+
+### 14.3 Optimasi Gambar
+
+* Kompres gambar sebelum dimasukkan ke project.
+* Gunakan thumbnail terpisah untuk daftar lokasi.
+* Hindari memuat semua panorama sekaligus.
+* Pertimbangkan WebP jika kompatibilitas sudah diuji.
+
+## 15. Rencana Implementasi
+
+## 15.1 Tahap 1 — Setup Project
+
+Tasks:
+
+* Buat project Vite + React + TypeScript.
+* Setup Tailwind CSS.
+* Setup React Router DOM.
+* Setup struktur folder.
+* Setup ESLint dan formatter jika dibutuhkan.
+
+Output:
+
+* Project bisa dijalankan secara lokal.
+* Routing dasar tersedia.
+
+## 15.2 Tahap 2 — Landing Page
+
+Tasks:
+
+* Buat halaman landing page.
+* Buat hero section.
+* Buat tombol masuk tour.
+* Buat section fitur singkat.
+
+Output:
+
+* User bisa masuk ke halaman tour dari landing page.
+
+## 15.3 Tahap 3 — Data Tour Statis
+
+Tasks:
+
+* Buat tipe data TourNode.
+* Buat file data lokasi awal.
+* Tambahkan 3–5 lokasi dummy.
+* Siapkan folder panorama.
+
+Output:
+
+* Data tour bisa digunakan oleh komponen viewer.
+
+## 15.4 Tahap 4 — Viewer 360
+
+Tasks:
+
+* Integrasi Photo Sphere Viewer.
+* Tampilkan panorama lokasi default.
+* Tambahkan loading state.
+* Tambahkan error state.
+
+Output:
+
+* Panorama 360 bisa dilihat dan digeser.
+
+## 15.5 Tahap 5 — Hotspot Navigasi
+
+Tasks:
+
+* Render hotspot berdasarkan data lokasi.
+* Implementasi perpindahan lokasi saat hotspot diklik.
+* Update lokasi aktif.
+
+Output:
+
+* User bisa berpindah antar lokasi lewat hotspot.
+
+## 15.6 Tahap 6 — Sidebar Lokasi dan Info Panel
+
+Tasks:
+
+* Buat daftar lokasi.
+* Buat panel informasi lokasi.
+* Sinkronkan lokasi aktif dengan viewer.
+
+Output:
+
+* User bisa memilih lokasi dari sidebar.
+* Informasi lokasi tampil sesuai panorama aktif.
+
+## 15.7 Tahap 7 — Mobile Responsive
+
+Tasks:
+
+* Ubah sidebar menjadi drawer di mobile.
+* Sesuaikan ukuran tombol kontrol.
+* Uji interaksi tap pada hotspot.
+
+Output:
+
+* Website nyaman digunakan di HP.
+
+## 15.8 Tahap 8 — Polish dan Deployment
+
+Tasks:
+
+* Optimasi gambar.
+* Tambahkan metadata halaman.
+* Uji browser.
+* Build production.
+* Deploy ke hosting.
+
+Output:
+
+* Website siap dipresentasikan atau digunakan sebagai MVP.
+
+## 16. Estimasi Halaman
+
+```txt
+/                 Landing Page
+/tour             Virtual Tour default
+/tour/:locationId Virtual Tour lokasi tertentu
+/about            Tentang Campus Tour, opsional
+*                 Not Found Page
+```
+
+## 17. Komponen Detail
+
+### 17.1 TourViewer
+
+Tanggung jawab:
+
+* Inisialisasi Photo Sphere Viewer.
+* Menampilkan panorama aktif.
+* Mengatur markers/hotspot.
+* Membersihkan instance viewer saat component unmount.
+
+Props awal:
+
+```ts
+type TourViewerProps = {
+  activeNode: TourNode;
+  nodes: TourNode[];
+  onNavigate: (targetNodeId: string) => void;
+  onOpenInfo: (infoHotspotId: string) => void;
+};
+```
+
+### 17.2 LocationList
+
+Tanggung jawab:
+
+* Menampilkan daftar lokasi.
+* Menandai lokasi aktif.
+* Mengirim event saat lokasi diklik.
+
+Props awal:
+
+```ts
+type LocationListProps = {
+  nodes: TourNode[];
+  activeNodeId: string;
+  onSelect: (nodeId: string) => void;
+};
+```
+
+### 17.3 LocationInfoPanel
+
+Tanggung jawab:
+
+* Menampilkan detail lokasi aktif.
+* Menampilkan fasilitas.
+* Menampilkan kategori lokasi.
+
+Props awal:
+
+```ts
+type LocationInfoPanelProps = {
+  node: TourNode;
+  isOpen: boolean;
+  onClose: () => void;
+};
+```
+
+### 17.4 TourControls
+
+Tanggung jawab:
+
+* Tombol fullscreen.
+* Tombol buka daftar lokasi.
+* Tombol buka info lokasi.
+* Tombol tampil/sembunyikan UI.
+
+## 18. State Management
+
+Untuk tahap awal, cukup gunakan React state lokal.
+
+State utama:
+
+```ts
+const [activeNodeId, setActiveNodeId] = useState(defaultNodeId);
+const [isInfoOpen, setIsInfoOpen] = useState(true);
+const [isLocationDrawerOpen, setIsLocationDrawerOpen] = useState(false);
+const [selectedInfoHotspot, setSelectedInfoHotspot] = useState(null);
+const [isLoadingPanorama, setIsLoadingPanorama] = useState(false);
+```
+
+Tidak perlu Redux/Zustand pada tahap awal kecuali kebutuhan bertambah.
+
+## 19. Routing Behavior
+
+### 19.1 Saat Membuka `/tour`
+
+Sistem menampilkan lokasi default, misalnya:
+
+```txt
+gerbang-kampus
+```
+
+### 19.2 Saat Membuka `/tour/:locationId`
+
+Sistem mencari lokasi berdasarkan `locationId`.
+
+Jika ditemukan:
+
+* Set sebagai lokasi aktif.
+* Tampilkan panorama lokasi tersebut.
+
+Jika tidak ditemukan:
+
+* Redirect ke `/tour`.
+* Atau tampilkan pesan “Lokasi tidak ditemukan”.
+
+## 20. Error Handling
+
+### 20.1 Panorama Gagal Dimuat
+
+Tampilkan pesan:
+
+```txt
+Panorama gagal dimuat. Silakan coba lagi atau pilih lokasi lain.
+```
+
+Aksi yang tersedia:
+
+* Coba lagi.
+* Pilih lokasi lain.
+* Kembali ke halaman utama.
+
+### 20.2 Hotspot Target Tidak Ada
+
+Jika hotspot mengarah ke lokasi yang tidak tersedia, sistem tidak boleh crash.
+
+Tampilkan toast atau pesan kecil:
+
+```txt
+Lokasi tujuan belum tersedia.
+```
+
+### 20.3 Browser Tidak Mendukung WebGL
+
+Tampilkan fallback:
+
+```txt
+Browser Anda belum mendukung tampilan 360. Silakan gunakan browser terbaru.
+```
+
+## 21. Deployment
+
+### 21.1 Build Command
+
+```bash
+npm run build
+```
+
+### 21.2 Preview Command
+
+```bash
+npm run preview
+```
+
+### 21.3 Hosting Rekomendasi
+
+* Vercel.
+* Netlify.
+* GitHub Pages.
+* Cloudflare Pages.
+* Hosting kampus dengan static file support.
+
+### 21.4 Environment Variable
+
+Untuk tahap awal kemungkinan belum diperlukan.
+
+Jika asset disimpan di CDN, bisa gunakan:
+
+```txt
+VITE_ASSET_BASE_URL=https://cdn.example.com/campus-tour
+```
+
+## 22. Risiko dan Mitigasi
+
+### Risiko 1 — Foto panorama terlalu besar
+
+Dampak:
+
+* Website lambat.
+* Pengguna mobile kesulitan membuka tour.
+
+Mitigasi:
+
+* Kompres gambar.
+* Gunakan WebP jika memungkinkan.
+* Lazy load panorama.
+* Gunakan thumbnail kecil.
+
+### Risiko 2 — Hotspot sulit ditentukan
+
+Dampak:
+
+* Navigasi antar lokasi tidak akurat.
+
+Mitigasi:
+
+* Buat mode debug sederhana untuk melihat yaw/pitch.
+* Catat koordinat hotspot saat testing.
+* Dokumentasikan posisi hotspot di file data.
+
+### Risiko 3 — Mobile interaction kurang nyaman
+
+Dampak:
+
+* Pengguna sulit klik hotspot atau kontrol.
+
+Mitigasi:
+
+* Gunakan ukuran tombol minimal 44px.
+* Hindari overlay terlalu banyak.
+* Gunakan drawer/bottom sheet.
+
+### Risiko 4 — Struktur data tidak siap untuk backend
+
+Dampak:
+
+* Sulit dikembangkan menjadi admin panel.
+
+Mitigasi:
+
+* Gunakan type data yang rapi.
+* Hindari hardcode data di komponen.
+* Pisahkan data, UI, dan logic navigasi.
+
+## 23. Success Metrics
+
+Untuk MVP, keberhasilan dapat diukur dari:
+
+1. Website dapat menampilkan minimal 5 lokasi kampus.
+2. Semua lokasi dapat diakses dari daftar lokasi.
+3. Minimal 80% hotspot navigasi bekerja sesuai tujuan.
+4. Website dapat digunakan di desktop dan mobile.
+5. Landing page dan tour berhasil dideploy.
+6. Pengguna baru dapat memahami cara menggunakan tour tanpa panduan panjang.
+
+## 24. MVP Definition
+
+MVP dianggap selesai jika memiliki:
+
+* Landing page.
+* Halaman tour 360.
+* Minimal 5 panorama lokasi.
+* Hotspot antar lokasi.
+* Daftar lokasi.
+* Panel informasi lokasi.
+* Responsive mobile.
+* Data statis berbasis TypeScript/JSON.
+* Build production berhasil.
+
+## 25. Future Enhancement
+
+Fitur yang bisa dikembangkan setelah MVP:
+
+* Admin panel.
+* Login admin.
+* Upload panorama.
+* Editor hotspot visual.
+* Database lokasi.
+* Multi-language.
+* Integrasi Google Maps.
+* Integrasi formulir PMB.
+* Analytics kunjungan.
+* Mode guided tour.
+* Voice narration.
+* VR mode.
+* Search lokasi.
+* Filter berdasarkan kategori gedung/fakultas.
+
+## 26. Rekomendasi Package
+
+Install package awal:
+
+```bash
+npm create vite@latest campus-tour-360 -- --template react-ts
+cd campus-tour-360
+npm install
+npm install react-router-dom @photo-sphere-viewer/core @photo-sphere-viewer/markers-plugin @photo-sphere-viewer/virtual-tour-plugin lucide-react
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+
+Catatan: package Photo Sphere Viewer dapat berubah mengikuti versi terbaru. Saat implementasi, cek dokumentasi resmi package yang digunakan.
+
+## 27. Contoh Konfigurasi Awal Route
+
+```tsx
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { LandingPage } from "../pages/LandingPage";
+import { TourPage } from "../pages/TourPage";
+import { AboutPage } from "../pages/AboutPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
+
+export function AppRoutes() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/tour" element={<TourPage />} />
+        <Route path="/tour/:locationId" element={<TourPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+```
+
+## 28. Catatan Penting untuk Developer
+
+1. Jangan gunakan Next.js untuk tahap ini.
+2. Gunakan Vite sebagai build tool utama.
+3. Jangan buat backend dulu.
+4. Jangan buat admin panel dulu.
+5. Jangan hardcode data lokasi langsung di komponen.
+6. Simpan semua data tour di file data terpisah.
+7. Pastikan struktur siap dipindahkan ke API di masa depan.
+8. Prioritaskan performa gambar panorama.
+9. Pastikan mobile experience nyaman.
+10. Dokumentasikan cara menambahkan lokasi baru.
+
+## 29. Definition of Done
+
+Project dianggap selesai jika:
+
+* Project berhasil dijalankan dengan `npm run dev`.
+* Project berhasil build dengan `npm run build`.
+* Landing page selesai.
+* Halaman tour selesai.
+* Viewer 360 berjalan.
+* Hotspot navigasi berjalan.
+* Daftar lokasi berjalan.
+* Panel informasi berjalan.
+* Responsive desktop dan mobile.
+* Minimal 5 data lokasi tersedia.
+* Tidak ada error fatal di console saat penggunaan normal.
+* README berisi cara menjalankan project dan cara menambahkan lokasi baru.
+
+## 30. Kesimpulan
+
+Untuk tahap awal, produk dikembangkan sebagai frontend-only menggunakan Vite, React, TypeScript, Tailwind CSS, dan Photo Sphere Viewer. Admin panel tidak diperlukan pada MVP karena semua data masih dapat dikelola melalui file statis. Namun, struktur data dan komponen harus dibuat rapi agar di masa depan mudah dikembangkan menjadi sistem dinamis dengan backend, database, dan admin panel.
