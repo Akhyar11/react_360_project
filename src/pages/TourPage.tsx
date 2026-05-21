@@ -17,6 +17,7 @@ export function TourPage() {
   // Dynamic state for locations
   const [nodes, setNodes] = useState(fallbackNodes);
   const [maps, setMaps] = useState<any[]>([]);
+  const [campusName, setCampusName] = useState("Campus");
 
   // Find active node based on URL param or fallback to first node
   const defaultNode = nodes[0] || fallbackNodes[0];
@@ -24,7 +25,7 @@ export function TourPage() {
 
   // Fetch locations and campus maps dynamically on mount
   useEffect(() => {
-    fetch("http://localhost:5000/api/nodes")
+    fetch("/api/nodes")
       .then((res) => {
         if (!res.ok) throw new Error("HTTP error " + res.status);
         return res.json();
@@ -32,10 +33,11 @@ export function TourPage() {
       .then((data) => setNodes(data))
       .catch((err) => console.log("Backend offline, menggunakan data statis lokal: ", err));
 
-    fetch("http://localhost:5000/api/campus-info")
+    fetch("/api/campus-info")
       .then((res) => res.json())
       .then((data) => {
         if (data.maps) setMaps(data.maps);
+        if (data.name) setCampusName(data.name);
       })
       .catch((err) => console.log("Gagal mengambil data maps:", err));
   }, []);
@@ -58,9 +60,9 @@ export function TourPage() {
   // Sync tab title based on activeNode name
   useEffect(() => {
     if (activeNode) {
-      document.title = `Virtual Tour: ${activeNode.name} | UAN`;
+      document.title = `Virtual Tour: ${activeNode.name} | ${campusName}`;
     }
-  }, [activeNode]);
+  }, [activeNode, campusName]);
 
   // Sync URL if locationId is invalid or missing
   useEffect(() => {
@@ -129,6 +131,7 @@ export function TourPage() {
             nodes={nodes}
             activeNodeId={activeNode.id}
             onSelect={handleNavigate}
+            maps={maps}
           />
         </aside>
       )}

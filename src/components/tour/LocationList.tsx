@@ -1,16 +1,43 @@
 import { useState, useMemo } from "react";
-import { MapPin, CheckCircle2, Search, Filter } from "lucide-react";
+import { 
+  MapPin, 
+  CheckCircle2, 
+  Search, 
+  Filter, 
+  Folder, 
+  FolderOpen, 
+  ChevronDown, 
+  ChevronRight,
+  FileText
+} from "lucide-react";
 import type { TourNode } from "../../types/tour";
 
 type LocationListProps = {
   nodes: TourNode[];
   activeNodeId: string;
   onSelect: (nodeId: string) => void;
+  maps?: any[];
 };
 
-export function LocationList({ nodes, activeNodeId, onSelect }: LocationListProps) {
+export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: LocationListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
+  
+  // Collapsed state for maps / folders. Keys are mapId, values are boolean (true = expanded).
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = { "tanpa-zona": true };
+    maps.forEach((m) => {
+      initial[m.id] = true;
+    });
+    return initial;
+  });
+
+  const toggleFolder = (mapId: string) => {
+    setExpandedFolders(prev => ({
+      ...prev,
+      [mapId]: !prev[mapId]
+    }));
+  };
 
   const categories = useMemo(() => {
     const cats = new Set(nodes.map((node) => node.category));
@@ -25,6 +52,35 @@ export function LocationList({ nodes, activeNodeId, onSelect }: LocationListProp
       return matchesSearch && matchesCategory;
     });
   }, [nodes, searchTerm, selectedCategory]);
+
+  // Group nodes by their mapId / folder
+  const groupedNodes = useMemo(() => {
+    const groups: Record<string, TourNode[]> = {};
+    
+    // Initialize groups for existing maps
+    maps.forEach((map) => {
+      groups[map.id] = [];
+    });
+    
+    // Group for nodes with no mapId or unregistered mapId
+    groups["tanpa-zona"] = [];
+
+    filteredNodes.forEach((node) => {
+      const mapId = node.mapId || "kampus-utama";
+      if (groups[mapId]) {
+        groups[mapId].push(node);
+      } else {
+        // Fallback to "tanpa-zona" or "kampus-utama"
+        if (groups["kampus-utama"]) {
+          groups["kampus-utama"].push(node);
+        } else {
+          groups["tanpa-zona"].push(node);
+        }
+      }
+    });
+
+    return groups;
+  }, [filteredNodes, maps]);
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 border-r border-slate-900">
@@ -67,57 +123,191 @@ export function LocationList({ nodes, activeNodeId, onSelect }: LocationListProp
         </div>
       </div>
 
-      {/* Location Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-slate-800">
-        {filteredNodes.length > 0 ? (
-          filteredNodes.map((node) => {
-            const isActive = node.id === activeNodeId;
-            return (
-              <button
-                key={node.id}
-                onClick={() => onSelect(node.id)}
-                className={`w-full flex items-start gap-3 p-2.5 rounded-xl transition-all border text-left ${
-                  isActive
-                    ? "bg-slate-900/80 border-teal-500/50 shadow-lg shadow-teal-500/5"
-                    : "bg-slate-950 hover:bg-slate-900 border-slate-900/40 hover:border-slate-800"
-                }`}
-              >
-                {/* Thumbnail */}
-                <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-slate-800">
-                  <img
-                    src={node.thumbnailUrl}
-                    alt={node.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {isActive && (
-                    <div className="absolute inset-0 bg-teal-500/25 flex items-center justify-center backdrop-blur-[1px]">
-                      <CheckCircle2 className="w-5 h-5 text-teal-400" />
+      {/* Location Scroll Area (Hierarchical Tree View) */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
+        {maps.length > 0 ? (
+          <>
+            {/* Render Map Folders */}
+            {maps.map((map) => {
+              const folderNodes = groupedNodes[map.id] || [];
+              const isExpanded = expandedFolders[map.id] !== false; // default true
+              
+              if (folderNodes.length === 0 && searchTerm) return null; // Hide empty folders during search
+
+              return (
+                <div key={map.id} className="space-y-1.5">
+                  {/* Folder Header */}
+                  <button
+                    onClick={() => toggleFolder(map.id)}
+                    className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-900/30 hover:bg-slate-900/60 border border-slate-900/40 hover:border-slate-800 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 tracking-wide uppercase">
+                      {isExpanded ? (
+                        <>
+                          <ChevronDown className="w-3.5 h-3.5 text-teal-500" />
+                          <FolderOpen className="w-4 h-4 text-teal-400 fill-teal-400/10" />
+                        </>
+                      ) : (
+                        <>
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                          <Folder className="w-4 h-4 text-slate-500" />
+                        </>
+                      )}
+                      <span className="truncate">{map.name}</span>
+                    </div>
+                    <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-500 px-1.5 py-0.5 rounded-full font-mono">
+                      {folderNodes.length}
+                    </span>
+                  </button>
+
+                  {/* Folder Contents */}
+                  {isExpanded && (
+                    <div className="pl-4 border-l border-slate-900/80 ml-3.5 space-y-2 pt-1">
+                      {folderNodes.length > 0 ? (
+                        folderNodes.map((node) => {
+                          const isActive = node.id === activeNodeId;
+                          return (
+                            <button
+                              key={node.id}
+                              onClick={() => onSelect(node.id)}
+                              className={`w-full flex items-start gap-2.5 p-2 rounded-xl transition-all border text-left ${
+                                isActive
+                                  ? "bg-slate-900 border-teal-500/40 shadow-md shadow-teal-500/5"
+                                  : "bg-transparent hover:bg-slate-900/50 border-transparent"
+                              }`}
+                            >
+                              {/* Small File/Pin Icon */}
+                              <div className="relative shrink-0 mt-0.5">
+                                <FileText className={`w-4 h-4 ${isActive ? "text-teal-400" : "text-slate-500"}`} />
+                              </div>
+
+                              {/* Details */}
+                              <div className="flex-1 min-w-0">
+                                <h4 className={`font-semibold text-xs truncate ${isActive ? "text-teal-400 font-bold" : "text-slate-300"}`}>
+                                  {node.name}
+                                </h4>
+                                <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5 font-light">
+                                  {node.description}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="text-[10px] text-slate-600 pl-6 py-1 italic">
+                          Folder ini kosong
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
+              );
+            })}
 
-                {/* Details */}
-                <div className="flex-1 min-w-0 pr-1 py-0.5">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-[10px] font-bold tracking-wider uppercase bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded border border-slate-800">
-                      {node.category}
-                    </span>
+            {/* Render "Lain-lain / Tanpa Zona" if it has nodes */}
+            {groupedNodes["tanpa-zona"] && groupedNodes["tanpa-zona"].length > 0 && (
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => toggleFolder("tanpa-zona")}
+                  className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-900/30 hover:bg-slate-900/60 border border-slate-900/40 hover:border-slate-800 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 tracking-wide uppercase">
+                    {expandedFolders["tanpa-zona"] !== false ? (
+                      <>
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                        <FolderOpen className="w-4 h-4 text-slate-500 fill-slate-500/10" />
+                      </>
+                    ) : (
+                      <>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                        <Folder className="w-4 h-4 text-slate-500" />
+                      </>
+                    )}
+                    <span>Titik Lainnya</span>
                   </div>
-                  <h4 className={`font-semibold text-sm truncate ${isActive ? "text-teal-400" : "text-white"}`}>
-                    {node.name}
-                  </h4>
-                  <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 font-light leading-relaxed">
-                    {node.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })
+                  <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-500 px-1.5 py-0.5 rounded-full font-mono">
+                    {groupedNodes["tanpa-zona"].length}
+                  </span>
+                </button>
+
+                {expandedFolders["tanpa-zona"] !== false && (
+                  <div className="pl-4 border-l border-slate-900/80 ml-3.5 space-y-2 pt-1">
+                    {groupedNodes["tanpa-zona"].map((node) => {
+                      const isActive = node.id === activeNodeId;
+                      return (
+                        <button
+                          key={node.id}
+                          onClick={() => onSelect(node.id)}
+                          className={`w-full flex items-start gap-2.5 p-2 rounded-xl transition-all border text-left ${
+                            isActive
+                              ? "bg-slate-900 border-teal-500/40 shadow-md shadow-teal-500/5"
+                              : "bg-transparent hover:bg-slate-900/50 border-transparent"
+                          }`}
+                        >
+                          <div className="relative shrink-0 mt-0.5">
+                            <FileText className={`w-4 h-4 ${isActive ? "text-teal-400" : "text-slate-500"}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-semibold text-xs truncate ${isActive ? "text-teal-400 font-bold" : "text-slate-300"}`}>
+                              {node.name}
+                            </h4>
+                            <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5 font-light">
+                              {node.description}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         ) : (
-          <div className="text-center py-12 px-4">
-            <MapPin className="w-8 h-8 text-slate-700 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">Tidak ada lokasi yang cocok.</p>
-          </div>
+          /* Fallback when no maps loaded */
+          filteredNodes.length > 0 ? (
+            filteredNodes.map((node) => {
+              const isActive = node.id === activeNodeId;
+              return (
+                <button
+                  key={node.id}
+                  onClick={() => onSelect(node.id)}
+                  className={`w-full flex items-start gap-3 p-2.5 rounded-xl transition-all border text-left ${
+                    isActive
+                      ? "bg-slate-900/80 border-teal-500/50 shadow-lg shadow-teal-500/5"
+                      : "bg-slate-950 hover:bg-slate-900 border-slate-900/40 hover:border-slate-800"
+                  }`}
+                >
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-slate-800">
+                    <img src={node.thumbnailUrl} alt={node.name} className="w-full h-full object-cover" />
+                    {isActive && (
+                      <div className="absolute inset-0 bg-teal-500/25 flex items-center justify-center backdrop-blur-[1px]">
+                        <CheckCircle2 className="w-5 h-5 text-teal-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 pr-1 py-0.5">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[10px] font-bold tracking-wider uppercase bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded border border-slate-800">
+                        {node.category}
+                      </span>
+                    </div>
+                    <h4 className={`font-semibold text-sm truncate ${isActive ? "text-teal-400" : "text-white"}`}>
+                      {node.name}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 font-light leading-relaxed">
+                      {node.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })
+          ) : (
+            <div className="text-center py-12 px-4">
+              <MapPin className="w-8 h-8 text-slate-700 mx-auto mb-3" />
+              <p className="text-sm text-slate-500">Tidak ada lokasi yang cocok.</p>
+            </div>
+          )
         )}
       </div>
     </div>

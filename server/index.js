@@ -8,6 +8,7 @@ import campusRoutes from "./routes/campusRoutes.js";
 import nodesRoutes from "./routes/nodesRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import { initializeDatabase } from "./utils/dbInit.js";
 
 const app = express();
@@ -28,6 +29,7 @@ app.use("/api/campus-info", campusRoutes);
 app.use("/api/nodes", nodesRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/users", userRoutes);
 
 // Root Hello API description endpoint
 app.get("/api", (req, res) => {

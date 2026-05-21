@@ -17,7 +17,10 @@ import {
   Sparkles,
   Upload,
   Map,
-  X
+  X,
+  Users,
+  UserPlus,
+  Shield
 } from "lucide-react";
 import { campusInfo as fallbackInfo, tourNodes as fallbackNodes } from "../data/tourNodes";
 import type { TourNode } from "../types/tour";
@@ -25,13 +28,19 @@ import type { TourNode } from "../types/tour";
 export function AdminPage() {
   const [nodes, setNodes] = useState<TourNode[]>(fallbackNodes);
   const [campusInfo, setCampusInfo] = useState(fallbackInfo);
-  const [activeTab, setActiveTab] = useState<"locations" | "campus" | "maps">("locations");
+  const [activeTab, setActiveTab] = useState<"locations" | "campus" | "maps" | "users">("locations");
   const [adminName, setAdminName] = useState("Admin");
   const navigate = useNavigate();
   
   // Loading & Alert state
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Admin Users state
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [deleteUserConfirmation, setDeleteUserConfirmation] = useState<{ id: number; name: string } | null>(null);
 
   // Form Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -90,6 +99,20 @@ export function AdminPage() {
           }
         }
         setCampusInfo(dataInfo);
+      }
+
+      // Fetch admin users securely
+      const token = localStorage.getItem("admin_token");
+      if (token) {
+        const resUsers = await fetch("http://localhost:5000/api/users", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (resUsers.ok) {
+          const dataUsers = await resUsers.json();
+          setAdminUsers(dataUsers);
+        }
       }
     } catch (error) {
       console.error("Gagal mengambil data dari backend:", error);
@@ -194,6 +217,125 @@ export function AdminPage() {
     } catch (error: any) {
       console.error(error);
       showToast("error", error.message || "Gagal menghapus lokasi.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/upload", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal mengunggah logo.");
+      }
+
+      handleUpdateCampusInfoField("logoUrl", data.url);
+      showToast("success", "Logo resmi kampus berhasil diunggah secara fisik!");
+    } catch (err: any) {
+      console.error(err);
+      showToast("error", err.message || "Gagal mengunggah logo.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- ADMIN USERS ACTIONS ---
+
+  const handleOpenAddUserModal = () => {
+    setEditingUser({ name: "", username: "", password: "" });
+    setIsUserModalOpen(true);
+  };
+
+  const handleOpenEditUserModal = (user: any) => {
+    setEditingUser({ ...user, password: "" }); // Clear password input by default for safety
+    setIsUserModalOpen(true);
+  };
+
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser.name || !editingUser.username) {
+      showToast("error", "Nama dan Username wajib diisi.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const isNew = !editingUser.id;
+      const url = isNew ? "http://localhost:5000/api/users" : `http://localhost:5000/api/users/${editingUser.id}`;
+      const method = isNew ? "POST" : "PUT";
+
+      // Validation for new user password
+      if (isNew && (!editingUser.password || editingUser.password.trim() === "")) {
+        showToast("error", "Password wajib diisi untuk user baru.");
+        setIsLoading(false);
+        return;
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
+        },
+        body: JSON.stringify(editingUser)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menyimpan user admin.");
+      }
+
+      showToast("success", isNew ? "Sukses membuat akun admin baru!" : "Sukses memperbarui detail akun admin!");
+      setIsUserModalOpen(false);
+      setEditingUser(null);
+      fetchData();
+    } catch (err: any) {
+      console.error(err);
+      showToast("error", err.message || "Terjadi kesalahan saat menyimpan user.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const executeDeleteUser = async () => {
+    if (!deleteUserConfirmation) return;
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/${deleteUserConfirmation.id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menghapus user.");
+      }
+
+      showToast("success", `Sukses menghapus akun admin "${deleteUserConfirmation.name}".`);
+      setDeleteUserConfirmation(null);
+      fetchData();
+    } catch (err: any) {
+      console.error(err);
+      showToast("error", err.message || "Gagal menghapus user.");
     } finally {
       setIsLoading(false);
     }
@@ -562,6 +704,15 @@ export function AdminPage() {
             {activeTab === "maps" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-400 rounded-full" />}
             Kelola Denah Peta (Background)
           </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`pb-4 px-2 text-base font-bold transition-all relative ${
+              activeTab === "users" ? "text-teal-400" : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            {activeTab === "users" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-400 rounded-full" />}
+            Kelola Akun Admin ({adminUsers.length})
+          </button>
         </div>
 
         {/* --- TAB CONTENT: LOCATIONS --- */}
@@ -653,6 +804,41 @@ export function AdminPage() {
             </div>
             
             <div className="space-y-6">
+              {/* Logo Kampus Upload */}
+              <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl border border-slate-900 bg-slate-900/10 backdrop-blur-sm mb-6">
+                <div className="relative w-24 h-24 rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden flex items-center justify-center shrink-0 shadow-lg group">
+                  {campusInfo.logoUrl ? (
+                    <img src={campusInfo.logoUrl} alt="Logo Kampus" className="w-full h-full object-contain p-2" />
+                  ) : (
+                    <School className="w-10 h-10 text-slate-700" />
+                  )}
+                  <label className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1 cursor-pointer transition-opacity text-[10px] text-teal-400 font-bold uppercase select-none text-center">
+                    <Upload className="w-4 h-4 text-teal-400 mx-auto" />
+                    Ganti Logo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <div className="space-y-1 text-center sm:text-left">
+                  <h4 className="font-bold text-white text-sm">Logo Resmi Kampus</h4>
+                  <p className="text-xs text-slate-500 font-light max-w-sm leading-relaxed">
+                    Unggah lambang/logo universitas atau sekolah Anda. Logo ini akan secara otomatis ditampilkan di navbar utama website publik.
+                  </p>
+                  {campusInfo.logoUrl && (
+                    <button
+                      onClick={() => handleUpdateCampusInfoField("logoUrl", "")}
+                      className="text-[10px] text-red-400 font-semibold hover:underline block mt-1 mx-auto sm:mx-0"
+                    >
+                      Hapus Logo (Gunakan default)
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Nama Universitas</label>
                 <input
@@ -835,7 +1021,188 @@ export function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* --- TAB CONTENT: USER MANAGEMENT --- */}
+        {activeTab === "users" && (
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-teal-400" />
+                  Manajemen Akun Admin (User)
+                </h2>
+                <p className="text-xs text-slate-500 font-light mt-1">
+                  Kelola hak akses administrator yang dapat masuk ke panel CMS virtual tour ini. Tambahkan, edit detail, atau hapus akun di bawah.
+                </p>
+              </div>
+              <button
+                onClick={handleOpenAddUserModal}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-400 to-blue-500 text-slate-950 font-bold hover:scale-105 active:scale-95 transition-all shadow-lg text-xs"
+              >
+                <UserPlus className="w-4 h-4" />
+                Tambah Admin Baru
+              </button>
+            </div>
+
+            {/* List of Admins */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {adminUsers.map((user: any) => (
+                <div key={user.id} className="p-5 rounded-2xl border border-slate-900 bg-slate-950 flex items-center justify-between gap-4 hover:border-slate-800 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-slate-900 text-teal-400">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm leading-snug">{user.name}</h4>
+                      <p className="text-[10px] text-slate-500 font-mono mt-0.5">@{user.username}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleOpenEditUserModal(user)}
+                      className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-teal-400 hover:text-teal-300 transition-colors"
+                      title="Edit Admin"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteUserConfirmation({ id: user.id, name: user.name })}
+                      className="p-2 rounded-xl bg-slate-900 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                      title="Hapus Admin"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* --- FORM MODAL: ADD / EDIT USER --- */}
+      {isUserModalOpen && editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <form onSubmit={handleSaveUser} className="w-full max-w-md rounded-3xl border border-slate-900 bg-slate-950 shadow-2xl overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-900 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white">
+                    {editingUser.id ? "Edit Akun Administrator" : "Tambah Administrator Baru"}
+                  </h3>
+                  <p className="text-[9px] text-slate-500 font-light">
+                    {editingUser.id ? "Pembaruan hak akses akun admin." : "Membuat kredensial akses panel CMS baru."}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUserModalOpen(false)}
+                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nama Lengkap</label>
+                <input
+                  type="text"
+                  placeholder="contoh: Dr. Andre S.Kom"
+                  value={editingUser.name || ""}
+                  onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-900 bg-slate-900/40 text-xs text-slate-200 focus:outline-none focus:border-teal-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1">Username Login</label>
+                <input
+                  type="text"
+                  placeholder="contoh: andre_admin"
+                  value={editingUser.username || ""}
+                  onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value.toLowerCase().replace(/\s+/g, "") })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-900 bg-slate-900/40 text-xs text-slate-200 focus:outline-none focus:border-teal-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                  Password {editingUser.id && <span className="text-[8px] text-slate-500 lowercase">(kosongkan jika tidak ingin diubah)</span>}
+                </label>
+                <input
+                  type="password"
+                  placeholder={editingUser.id ? "••••••••" : "Masukkan password aman..."}
+                  value={editingUser.password || ""}
+                  onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-900 bg-slate-900/40 text-xs text-slate-200 focus:outline-none focus:border-teal-500"
+                  required={!editingUser.id}
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-900 bg-slate-900/10 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsUserModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 text-xs font-semibold transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold hover:scale-105 active:scale-95 text-xs transition-all flex items-center gap-1.5 shadow-md shadow-teal-500/10"
+              >
+                <Save className="w-3.5 h-3.5" />
+                Simpan Akun
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* --- DELETE USER CONFIRMATION MODAL --- */}
+      {deleteUserConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-900 bg-slate-950 shadow-2xl p-6 space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-red-500/10 text-red-400 shrink-0">
+                <AlertCircle className="w-6 h-6 animate-bounce" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">Hapus Akun Administrator?</h3>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Kredensial login untuk <strong>{deleteUserConfirmation.name}</strong> akan dicabut secara permanen.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDeleteUserConfirmation(null)}
+                className="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-bold transition-colors"
+              >
+                Batalkan
+              </button>
+              <button
+                onClick={executeDeleteUser}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-all shadow-lg hover:shadow-red-500/20"
+              >
+                Hapus Permanen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- FORM MODAL: ADD / EDIT LOCATION --- */}
       {isModalOpen && editingNode && (

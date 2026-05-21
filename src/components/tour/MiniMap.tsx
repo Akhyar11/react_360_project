@@ -90,7 +90,7 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
       <div className="flex items-center justify-between mb-2.5 relative z-10">
         <div className="flex items-center gap-1.5">
           <Map className="w-4 h-4 text-teal-400 animate-pulse" />
-          <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">Denah Kampus UAN</span>
+          <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">Denah Lokasi Kampus</span>
         </div>
         <div className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-[9px] text-teal-400 font-bold tracking-widest uppercase select-none">
           Live Map
@@ -215,7 +215,7 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
 
         {/* Map Watermark / Branding */}
         <div className="absolute bottom-2 left-2 text-[8px] text-slate-400/50 tracking-widest font-mono select-none uppercase pointer-events-none z-10">
-          {activeMap?.name || "UAN Campus Map"}
+          {activeMap?.name || "Campus Map"}
         </div>
       </div>
       

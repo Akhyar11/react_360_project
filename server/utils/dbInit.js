@@ -40,6 +40,24 @@ export const initializeDatabase = async () => {
     const campusCount = await CampusInfo.count();
     const nodeCount = await TourNode.count();
 
+    // Auto-update legacy UAN records to generic templates on startup
+    if (campusCount > 0) {
+      const mainInfo = await CampusInfo.findOne();
+      if (mainInfo.name === "Universitas Antigravity Nusantara (UAN)") {
+        mainInfo.name = "Nama Kampus Anda";
+        mainInfo.slogan = "Slogan Kampus Anda";
+        mainInfo.description = "Deskripsi profil kampus Anda. Anda dapat mengedit teks ini kapan saja secara langsung melalui Tab Kelola Profil Kampus di Halaman Admin.";
+        mainInfo.stats = [
+          { label: "Mahasiswa Aktif", value: "1.000+" },
+          { label: "Program Studi", value: "10+" },
+          { label: "Fasilitas Lab Modern", value: "5+" },
+          { label: "Peringkat Nasional", value: "-" }
+        ];
+        await mainInfo.save();
+        console.log("ℹ️ Profil UAN di database telah berhasil diubah ke template Kampus Kosong.");
+      }
+    }
+
     // Ensure existing campus info has default maps if not populated
     if (campusCount > 0) {
       const mainInfo = await CampusInfo.findOne();

@@ -224,14 +224,15 @@ export const tourNodes: TourNode[] = [
 ];
 
 export const campusInfo = {
-  name: "Universitas Antigravity Nusantara (UAN)",
-  slogan: "Innovation, Exploration, & Biological Intelligence",
-  description: "Universitas riset kelas dunia yang memadukan teknologi kecerdasan buatan, sains antariksa, seni kreatif, dan keselarasan dengan alam. Kampus kami dirancang untuk menginspirasi eksplorasi tanpa batas.",
+  name: "Nama Kampus Anda",
+  slogan: "Slogan Kampus Anda",
+  logoUrl: "",
+  description: "Silakan ganti deskripsi profil kampus ini melalui Halaman Admin secara langsung.",
   stats: [
-    { label: "Mahasiswa Aktif", value: "18,500+" },
-    { label: "Program Studi", value: "42" },
-    { label: "Fasilitas Lab Modern", value: "28" },
-    { label: "Peringkat Nasional", value: "Top 5" }
+    { label: "Mahasiswa Aktif", value: "1.000+" },
+    { label: "Program Studi", value: "10+" },
+    { label: "Fasilitas Lab Modern", value: "5+" },
+    { label: "Peringkat Nasional", value: "-" }
   ],
   quickTips: [
     { title: "Gunakan Mouse / Sentuhan", text: "Klik dan seret (drag) pada layar untuk memutar panorama 360 derajat ke segala arah." },

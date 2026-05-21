@@ -8,10 +8,10 @@ export function LandingPage() {
   const [info, setInfo] = useState(fallbackInfo);
 
   useEffect(() => {
-    document.title = "UAN 360° | Virtual Campus Tour";
+    document.title = `${info.name || "Kampus"} 360° | Virtual Campus Tour`;
 
     // Fetch dynamic data from the Express backend
-    fetch("http://localhost:5000/api/nodes")
+    fetch("/api/nodes")
       .then((res) => {
         if (!res.ok) throw new Error("HTTP error " + res.status);
         return res.json();
@@ -19,14 +19,17 @@ export function LandingPage() {
       .then((data) => setNodes(data))
       .catch((err) => console.log("Backend offline, menggunakan data statis lokal: ", err));
 
-    fetch("http://localhost:5000/api/campus-info")
+    fetch("/api/campus-info")
       .then((res) => {
         if (!res.ok) throw new Error("HTTP error " + res.status);
         return res.json();
       })
-      .then((data) => setInfo(data))
+      .then((data) => {
+        setInfo(data);
+        document.title = `${data.name || "Kampus"} 360° | Virtual Campus Tour`;
+      })
       .catch((err) => console.log("Backend offline, menggunakan data statis lokal: ", err));
-  }, []);
+  }, [info.name]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-teal-500 selection:text-slate-900">
@@ -38,12 +41,16 @@ export function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="bg-gradient-to-tr from-teal-400 to-blue-500 p-2 rounded-xl text-slate-950 shadow-lg shadow-teal-500/20 group-hover:scale-105 transition-transform duration-300">
-              <School className="w-6 h-6" />
+            <div className="bg-gradient-to-tr from-teal-400 to-blue-500 p-2 rounded-xl text-slate-950 shadow-lg shadow-teal-500/20 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center w-10 h-10 overflow-hidden">
+              {info.logoUrl ? (
+                <img src={info.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+              ) : (
+                <School className="w-6 h-6" />
+              )}
             </div>
             <div>
               <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                UAN 360°
+                {info.name || "Kampus"} 360°
               </span>
               <span className="block text-[10px] text-teal-400 font-medium tracking-widest uppercase">
                 Virtual Campus Tour

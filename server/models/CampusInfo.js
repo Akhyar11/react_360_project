@@ -19,6 +19,11 @@ const CampusInfo = sequelize.define("CampusInfo", {
     type: DataTypes.TEXT,
     allowNull: false,
   },
+  logoUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: "",
+  },
   stats: {
     type: DataTypes.JSON,
     allowNull: false,

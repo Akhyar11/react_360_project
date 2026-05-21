@@ -10,7 +10,7 @@ export function AboutPage() {
     document.title = "Tentang UAN | Virtual Campus Tour";
 
     // Fetch dynamic campus info from backend
-    fetch("http://localhost:5000/api/campus-info")
+    fetch("/api/campus-info")
       .then((res) => {
         if (!res.ok) throw new Error("HTTP error " + res.status);
         return res.json();
