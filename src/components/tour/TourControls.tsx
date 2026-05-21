@@ -25,6 +25,8 @@ type TourControlsProps = {
   onToggleMap: () => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
+  primaryColor?: string;
+  secondaryColor?: string;
 };
 
 export function TourControls({
@@ -40,6 +42,8 @@ export function TourControls({
   onToggleMap,
   onZoomIn,
   onZoomOut,
+  primaryColor = "#14b8a6",
+  secondaryColor = "#3b82f6",
 }: TourControlsProps) {
   // If UI is completely hidden, only render the show-UI overlay toggle button so they can restore it
   if (!isUiVisible) {
@@ -50,12 +54,17 @@ export function TourControls({
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-slate-300 hover:text-white shadow-2xl backdrop-blur-md transition-all active:scale-95"
           title="Tampilkan UI Kontrol"
         >
-          <Eye className="w-5 h-5 text-teal-400" />
+          <Eye className="w-5 h-5" style={{ color: primaryColor }} />
           <span className="text-xs font-semibold tracking-wider uppercase">Tampilkan Kontrol</span>
         </button>
       </div>
     );
   }
+
+  const activeStyle = {
+    background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+    color: "#0f172a",
+  };
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -73,40 +82,31 @@ export function TourControls({
         {/* Toggle Location List Sidebar */}
         <button
           onClick={onToggleSidebar}
-          className={`p-2.5 rounded-xl transition-all ${
-            isSidebarOpen
-              ? "bg-teal-500 text-slate-950 font-bold"
-              : "hover:bg-slate-900 text-slate-400 hover:text-white"
-          }`}
+          className="p-2.5 rounded-xl transition-all font-bold"
+          style={isSidebarOpen ? activeStyle : {}}
           title={isSidebarOpen ? "Tutup Daftar Lokasi" : "Buka Daftar Lokasi"}
         >
-          <Menu className="w-5 h-5" />
+          <Menu className={`w-5 h-5 ${!isSidebarOpen ? "text-slate-400" : ""}`} />
         </button>
 
         {/* Toggle Info Panel */}
         <button
           onClick={onToggleInfo}
-          className={`p-2.5 rounded-xl transition-all ${
-            isInfoOpen
-              ? "bg-teal-500 text-slate-950 font-bold"
-              : "hover:bg-slate-900 text-slate-400 hover:text-white"
-          }`}
+          className="p-2.5 rounded-xl transition-all font-bold"
+          style={isInfoOpen ? activeStyle : {}}
           title={isInfoOpen ? "Tutup Detail Lokasi" : "Buka Detail Lokasi"}
         >
-          <Info className="w-5 h-5" />
+          <Info className={`w-5 h-5 ${!isInfoOpen ? "text-slate-400" : ""}`} />
         </button>
 
         {/* Toggle Mini Map Overlay */}
         <button
           onClick={onToggleMap}
-          className={`p-2.5 rounded-xl transition-all ${
-            isMapOpen
-              ? "bg-teal-500 text-slate-950 font-bold"
-              : "hover:bg-slate-900 text-slate-400 hover:text-white"
-          }`}
-          title={isMapOpen ? "Tembunyikan Denah" : "Tampilkan Denah"}
+          className="p-2.5 rounded-xl transition-all font-bold"
+          style={isMapOpen ? activeStyle : {}}
+          title={isMapOpen ? "Sembunyikan Denah" : "Tampilkan Denah"}
         >
-          <Map className="w-5 h-5" />
+          <Map className={`w-5 h-5 ${!isMapOpen ? "text-slate-400" : ""}`} />
         </button>
       </div>
 

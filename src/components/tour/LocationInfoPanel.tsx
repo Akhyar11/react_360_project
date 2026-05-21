@@ -5,20 +5,31 @@ type LocationInfoPanelProps = {
   node: TourNode;
   isOpen: boolean;
   onClose: () => void;
+  primaryColor?: string;
+  secondaryColor?: string;
 };
 
-export function LocationInfoPanel({ node, isOpen, onClose }: LocationInfoPanelProps) {
+export function LocationInfoPanel({
+  node,
+  isOpen,
+  onClose,
+  primaryColor = "#14b8a6",
+  secondaryColor = "#3b82f6",
+}: LocationInfoPanelProps) {
   if (!isOpen) return null;
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 border-l border-slate-900 max-w-sm w-full shadow-2xl relative overflow-hidden">
       {/* Background glow in details panel */}
-      <div className="absolute -right-20 -top-20 w-48 h-48 bg-teal-500/5 rounded-full blur-2xl pointer-events-none" />
+      <div
+        className="absolute -right-20 -top-20 w-48 h-48 rounded-full blur-2xl pointer-events-none opacity-10"
+        style={{ backgroundColor: primaryColor }}
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-slate-900 relative z-10 bg-slate-950/80 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-teal-400 shrink-0 animate-bounce" />
+          <MapPin className="w-5 h-5 shrink-0 animate-bounce" style={{ color: primaryColor }} />
           <h3 className="font-bold text-white tracking-wide">Detail Lokasi</h3>
         </div>
         <button
@@ -34,7 +45,14 @@ export function LocationInfoPanel({ node, isOpen, onClose }: LocationInfoPanelPr
       <div className="flex-1 overflow-y-auto p-5 space-y-6 relative z-10 scrollbar-thin scrollbar-thumb-slate-800">
         {/* Category & Title */}
         <div>
-          <span className="text-[10px] font-bold tracking-widest uppercase bg-teal-500/10 text-teal-400 border border-teal-500/20 px-2.5 py-1 rounded-md">
+          <span
+            className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-md border"
+            style={{
+              backgroundColor: `${primaryColor}15`,
+              color: primaryColor,
+              borderColor: `${primaryColor}30`,
+            }}
+          >
             {node.category}
           </span>
           <h2 className="text-xl font-extrabold text-white mt-3 leading-snug">
@@ -50,7 +68,12 @@ export function LocationInfoPanel({ node, isOpen, onClose }: LocationInfoPanelPr
               alt={node.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent" />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(to top, ${primaryColor}40, transparent)`,
+              }}
+            />
           </div>
         )}
 
@@ -69,13 +92,20 @@ export function LocationInfoPanel({ node, isOpen, onClose }: LocationInfoPanelPr
         {node.facilities && node.facilities.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-teal-400" />
-              Fasilitas & Layanan
+              <Check className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+              Fasilitas &amp; Layanan
             </h4>
             <ul className="space-y-2">
               {node.facilities.map((fac, idx) => (
                 <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-300">
-                  <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 text-teal-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  <span
+                    className="w-5 h-5 rounded-full border text-xs font-bold flex items-center justify-center shrink-0 mt-0.5"
+                    style={{
+                      backgroundColor: `${primaryColor}15`,
+                      borderColor: `${primaryColor}30`,
+                      color: primaryColor,
+                    }}
+                  >
                     ✓
                   </span>
                   <span className="font-light">{fac}</span>

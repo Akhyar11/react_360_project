@@ -17,9 +17,18 @@ type LocationListProps = {
   activeNodeId: string;
   onSelect: (nodeId: string) => void;
   maps?: any[];
+  primaryColor?: string;
+  secondaryColor?: string;
 };
 
-export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: LocationListProps) {
+export function LocationList({ 
+  nodes, 
+  activeNodeId, 
+  onSelect, 
+  maps = [],
+  primaryColor = "#14b8a6",
+  secondaryColor = "#3b82f6"
+}: LocationListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   
@@ -100,26 +109,31 @@ export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: Locat
             placeholder="Cari nama lokasi..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-9 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500/80 transition-colors"
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-9 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-colors"
+            style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
           />
         </div>
 
         {/* Category Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-800">
           <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0 mr-1" />
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all shrink-0 ${
-                selectedCategory === category
-                  ? "bg-teal-500 text-slate-950 shadow-md shadow-teal-500/10"
-                  : "bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800/80"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+          {categories.map((category) => {
+            const isSelected = selectedCategory === category;
+            return (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all shrink-0 ${
+                  isSelected
+                    ? "text-slate-950 shadow-md"
+                    : "bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800/80"
+                }`}
+                style={isSelected ? { backgroundColor: primaryColor, boxShadow: `0 4px 6px -1px ${primaryColor}30, 0 2px 4px -1px ${primaryColor}10` } : {}}
+              >
+                {category}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -144,8 +158,8 @@ export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: Locat
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 tracking-wide uppercase">
                       {isExpanded ? (
                         <>
-                          <ChevronDown className="w-3.5 h-3.5 text-teal-500" />
-                          <FolderOpen className="w-4 h-4 text-teal-400 fill-teal-400/10" />
+                          <ChevronDown className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+                          <FolderOpen className="w-4 h-4" style={{ color: primaryColor, fill: `${primaryColor}15` }} />
                         </>
                       ) : (
                         <>
@@ -172,18 +186,19 @@ export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: Locat
                               onClick={() => onSelect(node.id)}
                               className={`w-full flex items-start gap-2.5 p-2 rounded-xl transition-all border text-left ${
                                 isActive
-                                  ? "bg-slate-900 border-teal-500/40 shadow-md shadow-teal-500/5"
+                                  ? "bg-slate-900"
                                   : "bg-transparent hover:bg-slate-900/50 border-transparent"
                               }`}
+                              style={isActive ? { borderColor: `${primaryColor}60`, boxShadow: `0 4px 6px -1px ${primaryColor}10` } : {}}
                             >
                               {/* Small File/Pin Icon */}
                               <div className="relative shrink-0 mt-0.5">
-                                <FileText className={`w-4 h-4 ${isActive ? "text-teal-400" : "text-slate-500"}`} />
+                                <FileText className={`w-4 h-4 ${!isActive ? "text-slate-500" : ""}`} style={isActive ? { color: primaryColor } : {}} />
                               </div>
 
                               {/* Details */}
                               <div className="flex-1 min-w-0">
-                                <h4 className={`font-semibold text-xs truncate ${isActive ? "text-teal-400 font-bold" : "text-slate-300"}`}>
+                                <h4 className={`font-semibold text-xs truncate ${isActive ? "font-bold" : "text-slate-300"}`} style={isActive ? { color: primaryColor } : {}}>
                                   {node.name}
                                 </h4>
                                 <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5 font-light">
@@ -215,7 +230,7 @@ export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: Locat
                     {expandedFolders["tanpa-zona"] !== false ? (
                       <>
                         <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                        <FolderOpen className="w-4 h-4 text-slate-500 fill-slate-500/10" />
+                        <FolderOpen className="w-4 h-4 text-slate-500" style={{ fill: "rgba(100,116,139,0.1)" }} />
                       </>
                     ) : (
                       <>
@@ -240,15 +255,16 @@ export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: Locat
                           onClick={() => onSelect(node.id)}
                           className={`w-full flex items-start gap-2.5 p-2 rounded-xl transition-all border text-left ${
                             isActive
-                              ? "bg-slate-900 border-teal-500/40 shadow-md shadow-teal-500/5"
+                              ? "bg-slate-900"
                               : "bg-transparent hover:bg-slate-900/50 border-transparent"
                           }`}
+                          style={isActive ? { borderColor: `${primaryColor}60`, boxShadow: `0 4px 6px -1px ${primaryColor}10` } : {}}
                         >
                           <div className="relative shrink-0 mt-0.5">
-                            <FileText className={`w-4 h-4 ${isActive ? "text-teal-400" : "text-slate-500"}`} />
+                            <FileText className={`w-4 h-4 ${!isActive ? "text-slate-500" : ""}`} style={isActive ? { color: primaryColor } : {}} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className={`font-semibold text-xs truncate ${isActive ? "text-teal-400 font-bold" : "text-slate-300"}`}>
+                            <h4 className={`font-semibold text-xs truncate ${isActive ? "font-bold" : "text-slate-300"}`} style={isActive ? { color: primaryColor } : {}}>
                               {node.name}
                             </h4>
                             <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5 font-light">
@@ -274,15 +290,19 @@ export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: Locat
                   onClick={() => onSelect(node.id)}
                   className={`w-full flex items-start gap-3 p-2.5 rounded-xl transition-all border text-left ${
                     isActive
-                      ? "bg-slate-900/80 border-teal-500/50 shadow-lg shadow-teal-500/5"
+                      ? "bg-slate-900/80"
                       : "bg-slate-950 hover:bg-slate-900 border-slate-900/40 hover:border-slate-800"
                   }`}
+                  style={isActive ? { borderColor: `${primaryColor}80`, boxShadow: `0 10px 15px -3px ${primaryColor}10` } : {}}
                 >
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-slate-800">
                     <img src={node.thumbnailUrl} alt={node.name} className="w-full h-full object-cover" />
                     {isActive && (
-                      <div className="absolute inset-0 bg-teal-500/25 flex items-center justify-center backdrop-blur-[1px]">
-                        <CheckCircle2 className="w-5 h-5 text-teal-400" />
+                      <div 
+                        className="absolute inset-0 flex items-center justify-center backdrop-blur-[1px]"
+                        style={{ backgroundColor: `${primaryColor}40` }}
+                      >
+                        <CheckCircle2 className="w-5 h-5" style={{ color: primaryColor }} />
                       </div>
                     )}
                   </div>
@@ -292,7 +312,7 @@ export function LocationList({ nodes, activeNodeId, onSelect, maps = [] }: Locat
                         {node.category}
                       </span>
                     </div>
-                    <h4 className={`font-semibold text-sm truncate ${isActive ? "text-teal-400" : "text-white"}`}>
+                    <h4 className={`font-semibold text-sm truncate ${!isActive ? "text-white" : ""}`} style={isActive ? { color: primaryColor } : {}}>
                       {node.name}
                     </h4>
                     <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 font-light leading-relaxed">

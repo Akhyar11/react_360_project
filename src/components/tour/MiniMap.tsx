@@ -155,18 +155,21 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [], primaryColor
           </defs>
           <rect width="100%" height="100%" fill="url(#mapGrid)" className={activeMap?.imageUrl ? "opacity-40" : "opacity-100"} />
           
-          {/* Dynamic connection lines based on hotspots */}
+          {/* Dynamic connection lines (titik-titik penghubung rute) */}
           {(() => {
             const lines: React.ReactNode[] = [];
             const processed = new Set<string>();
             
-            visibleNodes.forEach(nodeA => {
+            visibleNodes.forEach((nodeA, index) => {
               const posA = nodeA.mapPosition || { x: 50, y: 50 };
               const colorA = nodeA.mapPosition?.color || primaryColor;
               
+              // 1. Draw explicit hotspot connections
+              let hasExplicitConnections = false;
               nodeA.navigationHotspots?.forEach(hs => {
                 const nodeB = visibleNodes.find(n => n.id === hs.targetNodeId);
                 if (nodeB) {
+                  hasExplicitConnections = true;
                   const posB = nodeB.mapPosition || { x: 50, y: 50 };
                   const pairKey = [nodeA.id, nodeB.id].sort().join('-');
                   
@@ -188,6 +191,31 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [], primaryColor
                   }
                 }
               });
+
+              // 2. Fallback: Draw sequential tour path if no explicit hotspots exist
+              // This connects Node 1 -> Node 2 -> Node 3, etc. to form a dotted path
+              const nextNode = visibleNodes[index + 1];
+              if (nextNode) {
+                const posB = nextNode.mapPosition || { x: 50, y: 50 };
+                const pairKey = [nodeA.id, nextNode.id].sort().join('-');
+                
+                if (!processed.has(pairKey)) {
+                  processed.add(pairKey);
+                  lines.push(
+                    <line
+                      key={`seq-${pairKey}`}
+                      x1={`${posA.x}%`}
+                      y1={`${posA.y}%`}
+                      x2={`${posB.x}%`}
+                      y2={`${posB.y}%`}
+                      stroke={primaryColor}
+                      strokeWidth="1.5"
+                      strokeDasharray="4 4"
+                      className="opacity-50"
+                    />
+                  );
+                }
+              }
             });
             return lines;
           })()}

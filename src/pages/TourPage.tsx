@@ -146,6 +146,8 @@ export function TourPage() {
             activeNodeId={activeNode.id}
             onSelect={handleNavigate}
             maps={maps}
+            primaryColor={primaryColor}
+            secondaryColor={secondaryColor}
           />
         </aside>
       )}
@@ -175,12 +177,12 @@ export function TourPage() {
         {isLoading && (
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center gap-4 transition-all duration-300">
             <div className="relative w-20 h-20 flex items-center justify-center">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-teal-500/20 animate-ping"></span>
-              <div className="w-12 h-12 rounded-full border-4 border-slate-800 border-t-teal-500 animate-spin"></div>
+              <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ backgroundColor: `${primaryColor}33` }}></span>
+              <div className="w-12 h-12 rounded-full border-4 border-slate-800 animate-spin" style={{ borderTopColor: primaryColor }}></div>
             </div>
             <div className="text-center">
               <h3 className="font-extrabold text-white text-lg tracking-wide uppercase flex items-center gap-2">
-                <Compass className="w-5 h-5 text-teal-400 animate-spin-slow" />
+                <Compass className="w-5 h-5 animate-spin-slow" style={{ color: primaryColor }} />
                 Memuat Panorama 360°
               </h3>
               <p className="text-slate-400 text-xs mt-1 font-light">Menyiapkan lingkungan imersif virtual tour...</p>
@@ -200,7 +202,8 @@ export function TourPage() {
             </p>
             <button
               onClick={() => handleNavigate(activeNode.id)}
-              className="px-5 py-2.5 bg-gradient-to-r from-teal-500 to-blue-600 text-slate-950 font-bold rounded-xl shadow-lg active:scale-95 transition-all"
+              className="px-5 py-2.5 text-slate-950 font-bold rounded-xl shadow-lg active:scale-95 transition-all"
+              style={{ background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` }}
             >
               Coba Lagi
             </button>
@@ -283,6 +286,8 @@ export function TourPage() {
             onToggleMap={() => setIsMapOpen(!isMapOpen)}
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
+            primaryColor={primaryColor}
+            secondaryColor={secondaryColor}
           />
         </div>
       </main>
@@ -294,6 +299,8 @@ export function TourPage() {
             node={activeNode}
             isOpen={isInfoOpen}
             onClose={() => setIsInfoOpen(false)}
+            primaryColor={primaryColor}
+            secondaryColor={secondaryColor}
           />
         </aside>
       )}
@@ -312,7 +319,7 @@ export function TourPage() {
               <X className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider mb-2.5">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: secondaryColor }}>
               <HelpCircle className="w-4 h-4" />
               <span>Detail Fasilitas Kampus</span>
             </div>
