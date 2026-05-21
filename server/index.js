@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import campusRoutes from "./routes/campusRoutes.js";
 import nodesRoutes from "./routes/nodesRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -15,6 +16,9 @@ app.use(express.json());
 
 // Serve physically uploaded files statically
 app.use("/uploads", express.static("uploads"));
+
+// Serve Vite compiled React frontend static files
+app.use(express.static("dist"));
 
 // Register Modular API Routes
 app.use("/api/campus-info", campusRoutes);
@@ -35,6 +39,13 @@ app.get("/api", (req, res) => {
   });
 });
 
+// Catch-all SPA router fallback (MUST be placed below API routes)
+app.get("*", (req, res) => {
+  if (!req.url.startsWith("/api") && !req.url.startsWith("/uploads")) {
+    res.sendFile(path.resolve("dist/index.html"));
+  }
+});
+
 // Initialize database and start server
 const startServer = async () => {
   // Sync database structure and seed initial values if empty
@@ -43,6 +54,7 @@ const startServer = async () => {
   app.listen(PORT, () => {
     console.log(`\n🤖 Express Backend server is running successfully on port ${PORT}!`);
     console.log(`   ➜ API URL: http://localhost:${PORT}/api/`);
+    console.log(`   ➜ Web App URL: http://localhost:${PORT}/`);
     console.log(`   ➜ DB Type: MySQL (via Sequelize ORM)\n`);
   });
 };

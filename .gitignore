@@ -31,3 +31,7 @@ uploads/
 
 # Scratch Scripts
 scratch/
+
+# Product Release Artifacts
+release/
+obfuscated-server/
