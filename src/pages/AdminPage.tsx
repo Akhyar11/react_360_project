@@ -318,7 +318,7 @@ export function AdminPage() {
         throw new Error(data.error || "Gagal mengunggah berkas gambar.");
       }
 
-      const updatedMaps = (campusInfo.maps || []).map((m: any) => {
+      const updatedMaps = ((campusInfo as any).maps || []).map((m: any) => {
         if (m.id === mapId) {
           return { ...m, imageUrl: data.url };
         }
@@ -341,9 +341,9 @@ export function AdminPage() {
 
   const handleAddMap = () => {
     const newMapId = `kampus-${Date.now()}`;
-    const newMapName = `Kampus Baru (Zona ${(campusInfo.maps?.length || 0) + 1})`;
+    const newMapName = `Kampus Baru (Zona ${((campusInfo as any).maps?.length || 0) + 1})`;
     const newMaps = [
-      ...(campusInfo.maps || []),
+      ...((campusInfo as any).maps || []),
       {
         id: newMapId,
         name: newMapName,
@@ -364,7 +364,7 @@ export function AdminPage() {
       return;
     }
 
-    if (mapId === "kampus-utama" && (campusInfo.maps || []).length === 1) {
+    if (mapId === "kampus-utama" && ((campusInfo as any).maps || []).length === 1) {
       showToast("error", "Harus menyisakan minimal 1 denah utama!");
       return;
     }
@@ -372,7 +372,7 @@ export function AdminPage() {
     const confirmDelete = window.confirm("Apakah Anda yakin ingin menghapus denah ini? Pilihan ini tidak dapat dibatalkan.");
     if (!confirmDelete) return;
 
-    const newMaps = (campusInfo.maps || []).filter((m: any) => m.id !== mapId);
+    const newMaps = ((campusInfo as any).maps || []).filter((m: any) => m.id !== mapId);
     setCampusInfo({
       ...campusInfo,
       maps: newMaps
@@ -380,7 +380,7 @@ export function AdminPage() {
   };
 
   const handleUpdateMapField = (mapId: string, field: string, value: any) => {
-    const newMaps = (campusInfo.maps || []).map((m: any) => {
+    const newMaps = ((campusInfo as any).maps || []).map((m: any) => {
       if (m.id === mapId) {
         return { ...m, [field]: value };
       }
@@ -742,7 +742,7 @@ export function AdminPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {(campusInfo.maps || []).map((map: any) => {
+              {((campusInfo as any).maps || []).map((map: any) => {
                 const mapNodes = nodes.filter(n => (n.mapId || "kampus-utama") === map.id);
 
                 return (
@@ -912,7 +912,7 @@ export function AdminPage() {
                       onChange={(e) => setEditingNode({ ...editingNode, mapId: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-900 bg-slate-900/40 text-sm text-slate-200 focus:outline-none focus:border-teal-500"
                     >
-                      {(campusInfo.maps || []).map((m: any) => (
+                      {((campusInfo as any).maps || []).map((m: any) => (
                         <option key={m.id} value={m.id}>{m.name}</option>
                       ))}
                     </select>
@@ -1020,7 +1020,7 @@ export function AdminPage() {
                       style={{ 
                         backgroundImage: (() => {
                           const currentMapId = editingNode.mapId || "kampus-utama";
-                          const selectedMap = (campusInfo.maps || []).find((m: any) => m.id === currentMapId) || (campusInfo.maps || [])[0];
+                          const selectedMap = ((campusInfo as any).maps || []).find((m: any) => m.id === currentMapId) || ((campusInfo as any).maps || [])[0];
                           return selectedMap?.imageUrl ? `url(${selectedMap.imageUrl})` : 'none';
                         })()
                       }}
@@ -1046,7 +1046,7 @@ export function AdminPage() {
                       {/* Dark overlay for contrast */}
                       {(() => {
                         const currentMapId = editingNode.mapId || "kampus-utama";
-                        const selectedMap = (campusInfo.maps || []).find((m: any) => m.id === currentMapId) || (campusInfo.maps || [])[0];
+                        const selectedMap = ((campusInfo as any).maps || []).find((m: any) => m.id === currentMapId) || ((campusInfo as any).maps || [])[0];
                         return selectedMap?.imageUrl ? <div className="absolute inset-0 bg-slate-950/45 pointer-events-none z-0" /> : null;
                       })()}
 
@@ -1062,7 +1062,6 @@ export function AdminPage() {
                         {/* Dynamic lines between other nodes in the same zone */}
                         {nodes.map(nodeA => {
                           const posA = nodeA.mapPosition || { x: 50, y: 50 };
-                          const colorA = nodeA.mapPosition?.color || '#14b8a6';
                           const nodeAMapId = nodeA.mapId || "kampus-utama";
                           const currentMapId = editingNode.mapId || "kampus-utama";
                           

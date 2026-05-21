@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import { exec } from "child_process";
+import os from "os";
 import campusRoutes from "./routes/campusRoutes.js";
 import nodesRoutes from "./routes/nodesRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -56,6 +58,17 @@ const startServer = async () => {
     console.log(`   ➜ API URL: http://localhost:${PORT}/api/`);
     console.log(`   ➜ Web App URL: http://localhost:${PORT}/`);
     console.log(`   ➜ DB Type: MySQL (via Sequelize ORM)\n`);
+
+    // Otomatis membuka browser
+    try {
+      const url = `http://localhost:${PORT}/`;
+      const platform = os.platform();
+      if (platform === 'darwin') exec(`open ${url}`);
+      else if (platform === 'win32') exec(`start ${url}`);
+      else exec(`xdg-open ${url}`);
+    } catch (err) {
+      console.log("Failed to open browser automatically.");
+    }
   });
 };
 

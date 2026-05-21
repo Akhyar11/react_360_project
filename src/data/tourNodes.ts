@@ -238,5 +238,6 @@ export const campusInfo = {
     { title: "Temukan Hotspot Panah", text: "Arahkan kursor ke ikon panah berkedip dan klik untuk langsung 'berjalan' ke lokasi berikutnya." },
     { title: "Ikon Informasi", text: "Klik ikon lingkaran dengan huruf 'i' untuk menampilkan penjelasan mendalam mengenai fasilitas di titik tersebut." },
     { title: "Buka Sidebar & Peta", text: "Gunakan panel daftar lokasi dan mini-map di kanan bawah untuk berpindah antar titik dengan instan." }
-  ]
+  ],
+  maps: [] as any[]
 };
