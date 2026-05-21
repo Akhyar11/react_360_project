@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Viewer } from "@photo-sphere-viewer/core";
 import { HelpCircle, X, Sparkles, Navigation2, Compass, AlertTriangle } from "lucide-react";
-import { tourNodes as fallbackNodes } from "../data/tourNodes";
+import { tourNodes as fallbackNodes, campusInfo as fallbackInfo } from "../data/tourNodes";
 import { TourViewer } from "../components/tour/TourViewer";
 import { LocationList } from "../components/tour/LocationList";
 import { LocationInfoPanel } from "../components/tour/LocationInfoPanel";
 import { TourControls } from "../components/tour/TourControls";
 import { MiniMap } from "../components/tour/MiniMap";
+import { School } from "lucide-react";
 import type { InfoHotspot } from "../types/tour";
 import { updateFavicon } from "../utils/favicon";
 
@@ -15,16 +16,20 @@ export function TourPage() {
   const { locationId } = useParams<{ locationId?: string }>();
   const navigate = useNavigate();
 
-  // Dynamic state for locations
+  // Dynamic state for locations & campus branding
   const [nodes, setNodes] = useState(fallbackNodes);
   const [maps, setMaps] = useState<any[]>([]);
-  const [campusName, setCampusName] = useState("Campus");
+  const [campusInfo, setCampusInfo] = useState<any>(fallbackInfo);
+
+  const campusName = campusInfo.name || "Campus";
+  const primaryColor = campusInfo.primaryColor || "#14b8a6";
+  const secondaryColor = campusInfo.secondaryColor || "#3b82f6";
 
   // Find active node based on URL param or fallback to first node
   const defaultNode = nodes[0] || fallbackNodes[0];
   const activeNode = nodes.find((node) => node.id === locationId) || defaultNode;
 
-  // Fetch locations and campus maps dynamically on mount
+  // Fetch locations and campus info dynamically on mount
   useEffect(() => {
     fetch("/api/nodes")
       .then((res) => {
@@ -38,11 +43,18 @@ export function TourPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.maps) setMaps(data.maps);
-        if (data.name) setCampusName(data.name);
+        setCampusInfo(data);
         if (data.logoUrl) updateFavicon(data.logoUrl);
       })
-      .catch((err) => console.log("Gagal mengambil data maps:", err));
+      .catch((err) => console.log("Gagal mengambil data kampus:", err));
   }, []);
+
+  // Apply brand colors as CSS variables globally whenever they change
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--color-primary", primaryColor);
+    root.style.setProperty("--color-secondary", secondaryColor);
+  }, [primaryColor, secondaryColor]);
 
   // State Management
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -197,18 +209,47 @@ export function TourPage() {
 
         {/* Floating Top Header Info */}
         {isUiVisible && (
-          <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none flex items-start justify-between">
+          <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none flex items-start justify-between gap-3">
+            {/* Left: Active Location Badge */}
             <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3.5 pointer-events-auto">
-              <div className="bg-gradient-to-tr from-teal-400 to-blue-500 w-8 h-8 rounded-xl flex items-center justify-center text-slate-950 shadow-md">
-                <Navigation2 className="w-4.5 h-4.5 -rotate-45 text-slate-950" />
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-950 shadow-md shrink-0"
+                style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+              >
+                <Navigation2 className="w-4 h-4 -rotate-45 text-white" />
               </div>
               <div>
-                <span className="text-[10px] font-bold tracking-wider uppercase text-teal-400 flex items-center gap-1.5">
+                <span
+                  className="text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5"
+                  style={{ color: primaryColor }}
+                >
                   <Sparkles className="w-3 h-3 animate-pulse" />
                   Lokasi Aktif
                 </span>
                 <h1 className="font-bold text-sm text-white">{activeNode.name}</h1>
               </div>
+            </div>
+
+            {/* Right: Campus Identity Badge */}
+            <div className="bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-2.5 pointer-events-auto ml-auto">
+              <div className="w-8 h-8 rounded-lg border border-slate-700 bg-slate-900 overflow-hidden flex items-center justify-center shrink-0">
+                {campusInfo.logoUrl ? (
+                  <img src={campusInfo.logoUrl.startsWith("/") || campusInfo.logoUrl.startsWith("http") ? campusInfo.logoUrl : `/${campusInfo.logoUrl}`} alt="Logo" className="w-full h-full object-contain p-0.5" />
+                ) : (
+                  <School className="w-4 h-4 text-slate-500" />
+                )}
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-xs font-bold text-white leading-tight max-w-[120px] truncate">{campusName}</p>
+                {campusInfo.slogan && (
+                  <p className="text-[9px] text-slate-500 font-light leading-tight max-w-[120px] truncate">{campusInfo.slogan}</p>
+                )}
+              </div>
+              {/* Gradient accent bar */}
+              <div
+                className="hidden sm:block w-0.5 h-7 rounded-full ml-0.5"
+                style={{ background: `linear-gradient(to bottom, ${primaryColor}, ${secondaryColor})` }}
+              />
             </div>
           </div>
         )}
@@ -221,6 +262,8 @@ export function TourPage() {
               activeNodeId={activeNode.id}
               onSelect={handleNavigate}
               maps={maps}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
             />
           </div>
         )}

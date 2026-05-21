@@ -4,9 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev:fe": "vite",
-    "dev:be": "node --watch server/index.js",
-    "dev": "concurrently -n \"Vite,Express\" -c \"cyan,magenta\" \"npm run dev:fe\" \"npm run dev:be\"",
+    "dev": "NODE_ENV=development node --watch-path=server --watch-path=.env server/index.js",
+    "dev:be": "NODE_ENV=development node --watch-path=server --watch-path=.env server/index.js",
     "server": "node server/index.js",
     "build": "tsc -b && vite build",
     "build:product": "node scripts/build-product.js",

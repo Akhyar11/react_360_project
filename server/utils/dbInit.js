@@ -20,9 +20,25 @@ export const initializeDatabase = async () => {
     await sequelize.authenticate();
     console.log("🔌 Koneksi ke MySQL berhasil terhubung.");
 
-    // 3. Sync Models (Create/alter tables in MySQL)
-    await sequelize.sync({ alter: true });
+    // 3. Sync Models — create tables only if they don't exist (safe, no alter)
+    await sequelize.sync({ alter: false });
     console.log("📁 Model Sequelize disinkronkan ke database MySQL.");
+
+    // 3.1 Safely add any new columns that may not exist yet (manual migration)
+    const safeAddColumn = async (table, column, definition) => {
+      try {
+        await sequelize.query(`ALTER TABLE \`${table}\` ADD COLUMN ${definition}`);
+        console.log(`✅ Kolom '${column}' berhasil ditambahkan ke tabel '${table}'.`);
+      } catch (e) {
+        if (e.original?.code === 'ER_DUP_FIELDNAME') {
+          // Column already exists — this is fine, skip silently
+        } else {
+          console.warn(`⚠️ Gagal menambahkan kolom '${column}': ${e.message}`);
+        }
+      }
+    };
+    await safeAddColumn('campus_info', 'primaryColor', '`primaryColor` VARCHAR(255) NULL DEFAULT \'#14b8a6\'');
+    await safeAddColumn('campus_info', 'secondaryColor', '`secondaryColor` VARCHAR(255) NULL DEFAULT \'#3b82f6\'');
 
     // 3.5. Seed Default Admin User if empty
     const userCount = await User.count();

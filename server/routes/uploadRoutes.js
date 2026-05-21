@@ -9,7 +9,8 @@ router.post("/", protect, upload.single("file"), (req, res) => {
     return res.status(400).json({ error: "Harap sertakan file gambar untuk diunggah!" });
   }
 
-  const fileUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+  // Use relative path so it works on any host/port
+  const fileUrl = `/uploads/${req.file.filename}`;
   res.status(200).json({
     message: "Gambar berhasil diunggah secara fisik!",
     url: fileUrl,

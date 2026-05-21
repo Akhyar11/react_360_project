@@ -227,7 +227,7 @@ export function LandingPage() {
             <span className="font-bold text-white tracking-wide">{info.name}</span>
           </div>
           <p className="text-xs text-slate-600">
-            &copy; {new Date().getFullYear()} {info.name}. All rights reserved. Created with Antigravity AI.
+            &copy; {new Date().getFullYear()} {info.name}. All rights reserved.
           </p>
         </div>
       </footer>

@@ -14,6 +14,8 @@ type MiniMapProps = {
   activeNodeId: string;
   onSelect: (nodeId: string) => void;
   maps?: CampusMapData[];
+  primaryColor?: string;
+  secondaryColor?: string;
 };
 
 // Helper function to render high-tech markers based on shape and color
@@ -58,7 +60,7 @@ function renderMarkerShape(shape: 'circle' | 'square' | 'triangle' | 'diamond', 
   );
 }
 
-export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapProps) {
+export function MiniMap({ nodes, activeNodeId, onSelect, maps = [], primaryColor = "#14b8a6", secondaryColor = "#3b82f6" }: MiniMapProps) {
   const activeNode = nodes.find(n => n.id === activeNodeId);
   
   // Track which map is currently selected for viewing
@@ -81,6 +83,15 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
   // Filter nodes belonging to the currently selected map
   const visibleNodes = nodes.filter(node => (node.mapId || "kampus-utama") === selectedMapId);
 
+  // Helper to ensure imageUrl always has a leading slash for nested routing (e.g. /tour/:id)
+  const getMapImageUrl = (url?: string) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) {
+      return url;
+    }
+    return `/${url}`;
+  };
+
   return (
     <div className="bg-slate-950/95 border border-slate-800 rounded-2xl p-4 shadow-2xl backdrop-blur-md w-72 relative overflow-hidden">
       {/* Background Tech Lines */}
@@ -89,10 +100,13 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
       {/* Header */}
       <div className="flex items-center justify-between mb-2.5 relative z-10">
         <div className="flex items-center gap-1.5">
-          <Map className="w-4 h-4 text-teal-400 animate-pulse" />
+          <Map className="w-4 h-4 animate-pulse" style={{ color: primaryColor }} />
           <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">Denah Lokasi Kampus</span>
         </div>
-        <div className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-[9px] text-teal-400 font-bold tracking-widest uppercase select-none">
+        <div
+          className="px-1.5 py-0.5 rounded border text-[9px] font-bold tracking-widest uppercase select-none"
+          style={{ backgroundColor: `${primaryColor}20`, borderColor: `${primaryColor}40`, color: primaryColor }}
+        >
           Live Map
         </div>
       </div>
@@ -106,9 +120,14 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
               onClick={() => setSelectedMapId(map.id)}
               className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-200 cursor-pointer ${
                 selectedMapId === map.id
-                  ? "bg-gradient-to-r from-teal-500/20 to-blue-600/20 border border-teal-500/40 text-teal-300 shadow-md shadow-teal-500/5"
+                  ? "border text-white shadow-md"
                   : "bg-slate-900/60 border border-slate-900 text-slate-500 hover:text-slate-300 hover:border-slate-800"
               }`}
+              style={selectedMapId === map.id ? {
+                background: `linear-gradient(135deg, ${primaryColor}25, ${secondaryColor}25)`,
+                borderColor: `${primaryColor}60`,
+                color: primaryColor,
+              } : {}}
             >
               {map.name}
             </button>
@@ -119,7 +138,7 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
       {/* Map Area */}
       <div 
         className="relative h-44 rounded-xl border border-slate-900 bg-slate-950 overflow-hidden flex items-center justify-center shadow-inner bg-cover bg-center transition-all duration-300"
-        style={{ backgroundImage: activeMap?.imageUrl ? `url(${activeMap.imageUrl})` : 'none' }}
+        style={{ backgroundImage: activeMap?.imageUrl ? `url(${getMapImageUrl(activeMap.imageUrl)})` : 'none' }}
       >
         {/* Semi-transparent dark overlay to ensure high contrast against drone maps */}
         {activeMap?.imageUrl && (
@@ -128,10 +147,10 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
 
         {/* SVG Grid and Connections */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-50 z-10">
-          {/* Glowing grid lines (Only show grid overlay if there's no custom uploaded background image, or overlay lightly if there is) */}
+          {/* Glowing grid lines */}
           <defs>
             <pattern id="mapGrid" width="10%" height="10%" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(20, 184, 166, 0.15)" strokeWidth="0.5" />
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke={`${primaryColor}26`} strokeWidth="0.5" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#mapGrid)" className={activeMap?.imageUrl ? "opacity-40" : "opacity-100"} />
@@ -143,7 +162,7 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
             
             visibleNodes.forEach(nodeA => {
               const posA = nodeA.mapPosition || { x: 50, y: 50 };
-              const colorA = nodeA.mapPosition?.color || '#14b8a6';
+              const colorA = nodeA.mapPosition?.color || primaryColor;
               
               nodeA.navigationHotspots?.forEach(hs => {
                 const nodeB = visibleNodes.find(n => n.id === hs.targetNodeId);
@@ -214,7 +233,10 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
         })}
 
         {/* Map Watermark / Branding */}
-        <div className="absolute bottom-2 left-2 text-[8px] text-slate-400/50 tracking-widest font-mono select-none uppercase pointer-events-none z-10">
+        <div
+          className="absolute bottom-2 left-2 text-[8px] tracking-widest font-mono select-none uppercase pointer-events-none z-10 font-bold"
+          style={{ color: `${primaryColor}80` }}
+        >
           {activeMap?.name || "Campus Map"}
         </div>
       </div>
@@ -223,7 +245,7 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [] }: MiniMapPro
       {activeNode && activeNode.mapId === selectedMapId && (
         <div className="mt-2.5 pt-2 border-t border-slate-900 text-[10px] text-slate-400 font-light flex items-center justify-between">
           <span>Titik Aktif:</span>
-          <span className="font-semibold text-teal-400">{activeNode.name}</span>
+          <span className="font-semibold" style={{ color: primaryColor }}>{activeNode.name}</span>
         </div>
       )}
     </div>

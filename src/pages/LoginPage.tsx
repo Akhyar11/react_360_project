@@ -166,11 +166,7 @@ export function LoginPage() {
           </form>
         </div>
 
-        {/* Demo Mode Notice */}
-        <div className="text-center mt-6 text-[10px] text-slate-500 leading-relaxed max-w-xs mx-auto">
-          Gunakan akun default untuk pengujian lokal:<br />
-          <span className="font-mono text-teal-400 font-bold">username: admin</span> &middot; <span className="font-mono text-teal-400 font-bold">password: admin123</span>
-        </div>
+
       </div>
     </div>
   );

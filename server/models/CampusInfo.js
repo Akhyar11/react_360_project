@@ -52,6 +52,16 @@ const CampusInfo = sequelize.define("CampusInfo", {
       }
     ]
   },
+  primaryColor: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: "#14b8a6",
+  },
+  secondaryColor: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: "#3b82f6",
+  },
 }, {
   tableName: "campus_info",
   timestamps: true,

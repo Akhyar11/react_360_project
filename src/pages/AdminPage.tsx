@@ -83,13 +83,13 @@ export function AdminPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const resNodes = await fetch("http://localhost:5000/api/nodes");
+      const resNodes = await fetch("/api/nodes");
       if (resNodes.ok) {
         const dataNodes = await resNodes.json();
         setNodes(dataNodes);
       }
       
-      const resInfo = await fetch("http://localhost:5000/api/campus-info");
+      const resInfo = await fetch("/api/campus-info");
       if (resInfo.ok) {
         const dataInfo = await resInfo.json();
         if (dataInfo.name) {
@@ -118,7 +118,7 @@ export function AdminPage() {
       // Fetch admin users securely
       const token = localStorage.getItem("admin_token");
       if (token) {
-        const resUsers = await fetch("http://localhost:5000/api/users", {
+        const resUsers = await fetch("/api/users", {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -171,7 +171,7 @@ export function AdminPage() {
     // Call API PUT /api/nodes/:id
     setIsLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/nodes/${nodeId}`, {
+      const res = await fetch(`/api/nodes/${nodeId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -209,8 +209,8 @@ export function AdminPage() {
 
     const isNew = !nodes.some((n) => n.id === editingNode.id);
     const url = isNew
-      ? "http://localhost:5000/api/nodes"
-      : `http://localhost:5000/api/nodes/${editingNode.id}`;
+      ? "/api/nodes"
+      : `/api/nodes/${editingNode.id}`;
     const method = isNew ? "POST" : "PUT";
 
     setIsLoading(true);
@@ -247,7 +247,7 @@ export function AdminPage() {
   const executeDeleteNode = async (id: string, name: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/nodes/${id}`, {
+      const res = await fetch(`/api/nodes/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
@@ -278,7 +278,7 @@ export function AdminPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
@@ -323,7 +323,7 @@ export function AdminPage() {
     setIsLoading(true);
     try {
       const isNew = !editingUser.id;
-      const url = isNew ? "http://localhost:5000/api/users" : `http://localhost:5000/api/users/${editingUser.id}`;
+      const url = isNew ? "/api/users" : `/api/users/${editingUser.id}`;
       const method = isNew ? "POST" : "PUT";
 
       // Validation for new user password
@@ -364,7 +364,7 @@ export function AdminPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${deleteUserConfirmation.id}`, {
+      const res = await fetch(`/api/users/${deleteUserConfirmation.id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
@@ -397,7 +397,7 @@ export function AdminPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
@@ -460,7 +460,7 @@ export function AdminPage() {
   const handleSaveCampusInfo = async () => {
     setIsLoading(true);
     try {
-      const saveRes = await fetch("http://localhost:5000/api/campus-info", {
+      const saveRes = await fetch("/api/campus-info", {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -493,7 +493,7 @@ export function AdminPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
@@ -506,6 +506,7 @@ export function AdminPage() {
         throw new Error(data.error || "Gagal mengunggah berkas gambar.");
       }
 
+      // Update maps with new imageUrl
       const updatedMaps = ((campusInfo as any).maps || []).map((m: any) => {
         if (m.id === mapId) {
           return { ...m, imageUrl: data.url };
@@ -513,17 +514,31 @@ export function AdminPage() {
         return m;
       });
 
-      setCampusInfo({
-        ...campusInfo,
-        maps: updatedMaps
+      // Update local state
+      const updatedCampusInfo = { ...campusInfo, maps: updatedMaps };
+      setCampusInfo(updatedCampusInfo);
+
+      // Auto-save to database immediately so TourPage MiniMap gets the image
+      const saveRes = await fetch("/api/campus-info", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
+        },
+        body: JSON.stringify(updatedCampusInfo)
       });
 
-      showToast("success", "Gambar denah berhasil diunggah secara fisik!");
+      if (!saveRes.ok) {
+        throw new Error("Gambar berhasil diunggah, tapi gagal menyimpan ke database.");
+      }
+
+      showToast("success", "Gambar denah berhasil diunggah dan disimpan ke database!");
     } catch (err: any) {
       console.error(err);
       showToast("error", err.message || "Gagal menghubungi server untuk mengunggah gambar.");
     } finally {
       setIsLoading(false);
+      e.target.value = "";
     }
   };
 
@@ -1100,6 +1115,67 @@ export function AdminPage() {
                   onChange={(e) => handleUpdateCampusInfoField("description", e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-900 bg-slate-900/40 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors resize-none leading-relaxed"
                 />
+              </div>
+
+              {/* Brand Color Customization */}
+              <div className="p-5 rounded-2xl border border-slate-900 bg-slate-900/10 backdrop-blur-sm">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Warna Tema Kampus</label>
+                <p className="text-[11px] text-slate-500 font-light mb-4 leading-relaxed">
+                  Pilih 2 kombinasi warna utama yang akan tampil sebagai aksen gradien di seluruh halaman tur virtual.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Primary Color */}
+                  <div className="flex items-center gap-4 p-3 rounded-xl border border-slate-900 bg-slate-950/50">
+                    <div className="relative group shrink-0">
+                      <label
+                        htmlFor="picker-primary"
+                        className="block w-12 h-12 rounded-xl border-2 border-slate-700 cursor-pointer shadow-lg hover:scale-105 transition-transform"
+                        style={{ backgroundColor: (campusInfo as any).primaryColor || "#14b8a6" }}
+                        title="Klik untuk pilih warna"
+                      />
+                      <input
+                        id="picker-primary"
+                        type="color"
+                        value={(campusInfo as any).primaryColor || "#14b8a6"}
+                        onChange={(e) => handleUpdateCampusInfoField("primaryColor", e.target.value)}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white mb-0.5">Warna Primer</p>
+                      <p className="text-[10px] text-slate-500 font-light">Aksen utama & glow</p>
+                      <code className="text-[10px] font-mono text-teal-400 mt-0.5 block">{(campusInfo as any).primaryColor || "#14b8a6"}</code>
+                    </div>
+                  </div>
+                  {/* Secondary Color */}
+                  <div className="flex items-center gap-4 p-3 rounded-xl border border-slate-900 bg-slate-950/50">
+                    <div className="relative group shrink-0">
+                      <label
+                        htmlFor="picker-secondary"
+                        className="block w-12 h-12 rounded-xl border-2 border-slate-700 cursor-pointer shadow-lg hover:scale-105 transition-transform"
+                        style={{ backgroundColor: (campusInfo as any).secondaryColor || "#3b82f6" }}
+                        title="Klik untuk pilih warna"
+                      />
+                      <input
+                        id="picker-secondary"
+                        type="color"
+                        value={(campusInfo as any).secondaryColor || "#3b82f6"}
+                        onChange={(e) => handleUpdateCampusInfoField("secondaryColor", e.target.value)}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white mb-0.5">Warna Sekunder</p>
+                      <p className="text-[10px] text-slate-500 font-light">Aksen gradien & sorotan</p>
+                      <code className="text-[10px] font-mono text-blue-400 mt-0.5 block">{(campusInfo as any).secondaryColor || "#3b82f6"}</code>
+                    </div>
+                  </div>
+                </div>
+                {/* Live Preview Bar */}
+                <div className="mt-4 h-2 w-full rounded-full overflow-hidden shadow-inner"
+                  style={{ background: `linear-gradient(to right, ${(campusInfo as any).primaryColor || "#14b8a6"}, ${(campusInfo as any).secondaryColor || "#3b82f6"})` }}
+                />
+                <p className="text-[10px] text-slate-600 mt-1.5 text-right font-light">Pratinjau gradien aktif</p>
               </div>
 
               {/* Stats Counters Editors */}

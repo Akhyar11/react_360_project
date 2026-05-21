@@ -228,6 +228,8 @@ export const campusInfo = {
   slogan: "Slogan Kampus Anda",
   logoUrl: "",
   description: "Silakan ganti deskripsi profil kampus ini melalui Halaman Admin secara langsung.",
+  primaryColor: "#14b8a6",
+  secondaryColor: "#3b82f6",
   stats: [
     { label: "Mahasiswa Aktif", value: "1.000+" },
     { label: "Program Studi", value: "10+" },
@@ -242,3 +244,4 @@ export const campusInfo = {
   ],
   maps: [] as any[]
 };
+
