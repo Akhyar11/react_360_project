@@ -21,17 +21,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Heavy 3D/WebGL viewer — load separately
-          'vendor-psv': [
-            '@photo-sphere-viewer/core',
-            '@photo-sphere-viewer/markers-plugin',
-            '@photo-sphere-viewer/virtual-tour-plugin',
-          ],
-          // React runtime
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // Icons (tree-shaken but still sizable)
-          'vendor-lucide': ['lucide-react'],
+        manualChunks(id) {
+          if (id.includes('@photo-sphere-viewer')) {
+            return 'vendor-psv';
+          }
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-lucide';
+          }
         },
       },
     },

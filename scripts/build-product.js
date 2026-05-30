@@ -33,7 +33,7 @@ const run = async () => {
 
   // Step 3: Bundle ES Modules Backend to a single CommonJS file
   console.log("⚡ Step 3: Bundling backend ES Modules into a single CommonJS file via esbuild...");
-  const esbuildCmd = "npx esbuild server/index.js --bundle --platform=node --format=cjs --outfile=dist-server/index.cjs --external:pg --external:pg-hstore --external:sqlite3 --external:tedious --external:mariadb --external:oracledb";
+  const esbuildCmd = "npx esbuild server/index.js --bundle --platform=node --format=cjs --outfile=dist-server/index.cjs --external:pg --external:pg-hstore --external:sqlite3 --external:tedious --external:mariadb --external:oracledb --external:dotenv";
   execSync(esbuildCmd, { stdio: "inherit" });
   console.log("✅ Bundling to CommonJS completed.\n");
 

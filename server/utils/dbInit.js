@@ -7,8 +7,14 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const _filename = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
-const _dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(_filename);
+let _dirname;
+if (typeof __dirname !== "undefined") {
+  _dirname = __dirname;
+} else if (typeof import.meta !== "undefined" && import.meta.url) {
+  _dirname = path.dirname(fileURLToPath(import.meta.url));
+} else {
+  _dirname = process.cwd();
+}
 const BACKUP_DATA_FILE = path.join(_dirname, "..", "tourData.json");
 
 export const initializeDatabase = async () => {

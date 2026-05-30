@@ -1,4 +1,5 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -13,9 +14,15 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import { initializeDatabase } from "./utils/dbInit.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(__dirname, "..");
+let _dirname;
+if (typeof __dirname !== "undefined") {
+  _dirname = __dirname;
+} else if (typeof import.meta !== "undefined" && import.meta.url) {
+  _dirname = path.dirname(fileURLToPath(import.meta.url));
+} else {
+  _dirname = process.cwd();
+}
+const ROOT = path.resolve(_dirname, "..");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
