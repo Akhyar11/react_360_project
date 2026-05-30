@@ -18,7 +18,7 @@ type LocationListProps = {
   onSelect: (nodeId: string) => void;
   maps?: any[];
   primaryColor?: string;
-  secondaryColor?: string;
+  secondaryColor?: string; // reserved for future use
 };
 
 export function LocationList({ 
@@ -27,7 +27,7 @@ export function LocationList({
   onSelect, 
   maps = [],
   primaryColor = "#14b8a6",
-  secondaryColor = "#3b82f6"
+  secondaryColor: _secondaryColor = "#3b82f6"
 }: LocationListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");

@@ -6,7 +6,7 @@ type LocationInfoPanelProps = {
   isOpen: boolean;
   onClose: () => void;
   primaryColor?: string;
-  secondaryColor?: string;
+  secondaryColor?: string; // reserved for future use
 };
 
 export function LocationInfoPanel({
@@ -14,7 +14,7 @@ export function LocationInfoPanel({
   isOpen,
   onClose,
   primaryColor = "#14b8a6",
-  secondaryColor = "#3b82f6",
+  secondaryColor: _secondaryColor = "#3b82f6",
 }: LocationInfoPanelProps) {
   if (!isOpen) return null;
 

@@ -165,11 +165,9 @@ export function MiniMap({ nodes, activeNodeId, onSelect, maps = [], primaryColor
               const colorA = nodeA.mapPosition?.color || primaryColor;
               
               // 1. Draw explicit hotspot connections
-              let hasExplicitConnections = false;
               nodeA.navigationHotspots?.forEach(hs => {
                 const nodeB = visibleNodes.find(n => n.id === hs.targetNodeId);
                 if (nodeB) {
-                  hasExplicitConnections = true;
                   const posB = nodeB.mapPosition || { x: 50, y: 50 };
                   const pairKey = [nodeA.id, nodeB.id].sort().join('-');
                   
